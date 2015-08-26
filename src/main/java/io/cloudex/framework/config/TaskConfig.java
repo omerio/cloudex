@@ -1,0 +1,185 @@
+/**
+ * The contents of this file may be used under the terms of the Apache License, Version 2.0
+ * in which case, the provisions of the Apache License Version 2.0 are applicable instead of those above.
+ *
+ * Copyright 2014, Ecarf.io
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.cloudex.framework.config;
+
+import io.cloudex.framework.types.ErrorAction;
+import io.cloudex.framework.types.TargetType;
+
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Represents Task configurations detailing how to instantiate a Task object. Details include the 
+ * Task inputs, outputs, code, target, etc...
+ * 
+ * @author Omer Dawelbeit (omerio)
+ *
+ */
+public class TaskConfig implements Serializable {
+
+    private static final long serialVersionUID = 3302466101507343648L;
+
+    private String id;
+    
+    private String className;
+    
+    // predefined task name
+    private String taskName;
+    
+    private Map<String, String> input;
+    
+    private Set<String> output;
+    
+    private TargetType target;
+    
+    private ErrorAction errorAction;
+    
+    private CodeConfig code;
+    
+    private PartitionConfig partitioning;
+
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    /**
+     * @return the className
+     */
+    public String getClassName() {
+        return className;
+    }
+
+    /**
+     * @param className the className to set
+     */
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    /**
+     * @return the taskName
+     */
+    public String getTaskName() {
+        return taskName;
+    }
+
+    /**
+     * @param taskName the taskName to set
+     */
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+
+    /**
+     * @return input
+     */
+    public Map<String, String> getInput() {
+        return input;
+    }
+
+    /**
+     * @param input the input to set
+     */
+    public void setInput(Map<String, String> input) {
+        this.input = input;
+    }
+
+    /**
+     * @return output
+     */
+    public Set<String> getOutput() {
+        return output;
+    }
+
+    /**
+     * @param output the output to set
+     */
+    public void setOutput(Set<String> output) {
+        this.output = output;
+    }
+
+    /**
+     * @return target
+     */
+    public TargetType getTarget() {
+        return target;
+    }
+
+    /**
+     * @param target the target to set
+     */
+    public void setTarget(TargetType target) {
+        this.target = target;
+    }
+
+    /**
+     * @return errorAction
+     */
+    public ErrorAction getErrorAction() {
+        return errorAction;
+    }
+
+    /**
+     * @param errorAction the errorAction to set
+     */
+    public void setErrorAction(ErrorAction errorAction) {
+        this.errorAction = errorAction;
+    }
+
+    /**
+     * @return the code
+     */
+    public CodeConfig getCode() {
+        return code;
+    }
+
+    /**
+     * @param code the code to set
+     */
+    public void setCode(CodeConfig code) {
+        this.code = code;
+    }
+
+    /**
+     * @return the partitioning
+     */
+    public PartitionConfig getPartitioning() {
+        return partitioning;
+    }
+
+    /**
+     * @param partitioning the partitioning to set
+     */
+    public void setPartitioning(PartitionConfig partitioning) {
+        this.partitioning = partitioning;
+    }
+
+}
