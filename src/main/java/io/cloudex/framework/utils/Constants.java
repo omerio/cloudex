@@ -35,7 +35,9 @@ public final class Constants {
     /**
      * The key for the cloud region or zone
      */
-    public static final String CLOUD_ZONE_ID = "zoneId";
+    public static final String ZONE_ID_KEY = "zoneId";
+    
+    public static final String PRCESSORS_KEY = "processors"; 
     
     /**
      * Extension for plain text files

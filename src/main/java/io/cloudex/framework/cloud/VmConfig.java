@@ -173,6 +173,21 @@ public class VmConfig {
     public String toString() {
         return ReflectionToStringBuilder.toString(this);
     }
+    
+    /**
+     * Make a selective copy of this instance
+     * @return a copy of this vm config
+     */
+    public VmConfig copy() {
+        VmConfig vmConfig = new VmConfig();
+        vmConfig.setDiskType(this.diskType);
+        vmConfig.setImageId(this.imageId);
+        vmConfig.setNetworkId(this.networkId);
+        vmConfig.setStartupScript(this.startupScript);
+        vmConfig.setVmType(this.vmType);
+        vmConfig.setZoneId(this.zoneId);
+        return vmConfig;
+    }
 
 
 

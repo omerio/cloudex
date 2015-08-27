@@ -107,12 +107,6 @@ public interface CloudService {
     public String getInstanceId();
       
     /**
-     * Return the maximum metadata size for the underlying cloud provider implementation
-     * @return
-     */
-    public int getMaximumMetaDataSize();
-
-    /**
      * Create a bucket on the mass cloud storage
      * @param bucket
      * @param location
@@ -168,5 +162,17 @@ public interface CloudService {
      * @throws IOException
      */
     public List<StorageObject> listCloudStorageObjects(String bucket) throws IOException;
+    
+    /**
+     * Return the maximum metadata size for the underlying cloud provider implementation
+     * @return maximum metadata size
+     */
+    public int getMaximumMetaDataSize();
+    
+    /**
+     * Get the sleep period in seconds when waiting for async API operations to complete
+     * @return API recheck delay
+     */
+    public int getApiRecheckDelay();
 
 }

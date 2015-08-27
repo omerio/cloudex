@@ -21,6 +21,7 @@
 package io.cloudex.framework.components;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,12 +41,15 @@ public class Context {
 
     // Tasks execution context
     private Map<String, Object> context;
+    
+    private Map<String, Object> readOnly;
 
     /**
      * default constructor
      */
     public Context() {
         this.context = new HashMap<>();
+        this.readOnly = new HashMap<>();
     }
 
     /**
@@ -58,6 +62,16 @@ public class Context {
         this.context.putAll(data);
     }
 
+    /**
+     * @param key
+     * @param value
+     * @return
+     * @see java.util.Map#put(java.lang.Object, java.lang.Object)
+     */
+    public Object putReadOnly(String key, Object value) {
+        return readOnly.put(key, value);
+    }
+    
     /**
      * Resolve the underlying key name, e.g. #key returns key
      * @param key - the key reference
@@ -85,6 +99,7 @@ public class Context {
      * @param valueKey - a key of a value 
      * @return - the resolved value
      */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Object resolveValue(final String valueKey) {
 
         Validate.notNull(valueKey, "valueKey is required");
@@ -97,7 +112,18 @@ public class Context {
             value = valueKey;        
 
         } else {
-            value = this.context.get(key);
+            
+            // resolve from the Readonly first
+            if(this.readOnly.keySet().contains(key)) {
+                value = this.readOnly.get(key);
+                
+                if(value instanceof Collection) {
+                    value = Collections.unmodifiableCollection((Collection) value);
+                }
+                
+            } else {
+                value = this.context.get(key);
+            }
         }
 
         return value;

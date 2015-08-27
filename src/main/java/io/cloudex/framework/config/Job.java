@@ -19,6 +19,7 @@
 
 package io.cloudex.framework.config;
 
+import io.cloudex.framework.cloud.VmConfig;
 import io.cloudex.framework.types.ExecutionMode;
 import io.cloudex.framework.utils.ObjectUtils;
 
@@ -43,7 +44,7 @@ public class Job implements Serializable {
 
     private Map<String, Object> data;
     
-    private Map<String, String> vmConfig;
+    private VmConfig vmConfig;
 
     private ExecutionMode mode;
 
@@ -100,6 +101,20 @@ public class Job implements Serializable {
     }
 
     /**
+     * @return the vmConfig
+     */
+    public final VmConfig getVmConfig() {
+        return vmConfig;
+    }
+
+    /**
+     * @param vmConfig the vmConfig to set
+     */
+    public final void setVmConfig(VmConfig vmConfig) {
+        this.vmConfig = vmConfig;
+    }
+
+    /**
      * @param tasks the tasks to set
      */
     public void setTasks(List<TaskConfig> tasks) {
@@ -134,20 +149,6 @@ public class Job implements Serializable {
      */
     public static Job fromJsonString(String json) {
         return ObjectUtils.GSON.fromJson(json, Job.class);
-    }
-
-    /**
-     * @return the vmConfig
-     */
-    public final Map<String, String> getVmConfig() {
-        return vmConfig;
-    }
-
-    /**
-     * @param vmConfig the vmConfig to set
-     */
-    public final void setVmConfig(Map<String, String> vmConfig) {
-        this.vmConfig = vmConfig;
     }
 
     public boolean isValid() {
