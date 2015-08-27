@@ -19,7 +19,11 @@
 
 package io.cloudex.framework.cloud;
 
+import io.cloudex.framework.cloud.api.Callback;
+import io.cloudex.framework.cloud.api.StorageObject;
+
 import java.io.IOException;
+import java.util.List;
 
 /**
  * An interface for cloud API operations. This is generic and is not cloud provider specific. Implementations are needed
@@ -57,7 +61,7 @@ public interface CloudService {
     public VmMetaData getMetaData(String instanceId, String zoneId) throws IOException;
     
     /**
-     * Update the meta data of the current instance
+     * Update the meta data of the current instance. 
      * @param metaData {@link VmMetaData}
      * @throws IOException if any of the cloud api calls fail
      */
@@ -73,5 +77,96 @@ public interface CloudService {
      */
     public void updateMetadata(VmMetaData metaData, 
             String zoneId, String instanceId, boolean block) throws IOException;
+    
+    /**
+     * Create VM instances, optionally block until all are created. If any fails then the returned flag is false
+     * @param configs
+     * @param block
+     * @return
+     * @throws IOException
+     */
+    public boolean startInstance(List<VmConfig> configs, boolean block) throws IOException;
+
+    /**
+     * Delete the VMs provided in this config
+     * @param configs
+     * @throws IOException
+     */
+    public void shutdownInstance(List<VmConfig> configs) throws IOException;
+
+    /**
+     * Delete the currently running vm, i.e. self terminate
+     * @throws IOException
+     */
+    public void shutdownInstance() throws IOException;
+
+    /**
+     * Get the id of the current instance
+     * @return
+     */
+    public String getInstanceId();
+      
+    /**
+     * Return the maximum metadata size for the underlying cloud provider implementation
+     * @return
+     */
+    public int getMaximumMetaDataSize();
+
+    /**
+     * Create a bucket on the mass cloud storage
+     * @param bucket
+     * @param location
+     * @throws IOException
+     */
+    public void createCloudStorageBucket(String bucket, String location) throws IOException;
+
+    /**
+     * Upload the provided file into cloud storage
+     * @param filename
+     * @param bucket
+     * @param callback
+     * @return 
+     * @throws IOException
+     */
+    public StorageObject uploadFileToCloudStorage(String filename, String bucket, Callback callback) throws IOException;
+    
+    
+    /**
+     * Upload a file to cloud storage and block until it's uploaded
+     * @param filename
+     * @param bucket
+     * @return 
+     * @throws IOException
+     */
+    public StorageObject uploadFileToCloudStorage(String filename, String bucket) throws IOException;
+
+    /**
+     * Download an object from cloud storage to a file
+     * @param object
+     * @param outFile
+     * @param bucket
+     * @param callback
+     * @throws IOException
+     */
+    public void downloadObjectFromCloudStorage(String object, String outFile,
+            String bucket, Callback callback) throws IOException;
+    
+    /**
+     * Download an object from cloud storage to a file, this method will block until the file is downloaded
+     * @param object
+     * @param outFile
+     * @param bucket
+     * @throws IOException
+     */
+    public void downloadObjectFromCloudStorage(String object, String outFile,
+            String bucket) throws IOException;
+    
+    /**
+     * List all the objects in the provided cloud storage bucket
+     * @param bucket
+     * @return
+     * @throws IOException
+     */
+    public List<StorageObject> listCloudStorageObjects(String bucket) throws IOException;
 
 }

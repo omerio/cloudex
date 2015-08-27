@@ -38,6 +38,8 @@ import io.cloudex.framework.task.factory.TaskFactoryImpl;
 import io.cloudex.framework.types.ErrorAction;
 import io.cloudex.framework.types.PartitionType;
 import io.cloudex.framework.types.TargetType;
+import io.cloudex.framework.utils.Constants;
+import io.cloudex.framework.utils.FileUtils;
 import io.cloudex.framework.utils.ObjectUtils;
 
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -55,6 +58,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 
 /**
  * The CloudEx Coordinator Component
@@ -69,7 +73,7 @@ public class Coordinator extends CommonExecutable {
     private Context context;
 
     // processor names
-    private List<String> processors = new ArrayList<>();
+    private Set<String> processors = new HashSet<>();
 
     private Job job;
 
@@ -177,28 +181,25 @@ public class Coordinator extends CommonExecutable {
         log.info("TIMER: Job completed in " + stopwatch);
 
     }
-
+    
     /**
-     * Create and start a task on a number of processors
-     * @param task
-     * @param taskConfig
-     * @throws InstancePopulationException 
-     * @throws ClassInstantiationException 
+     * Get the items that we will use for partition the work between the processors
+     * @param task - the current task
+     * @param partitionConfig - the parition config for the task
+     * @param itemsKey - the key for the partition items, this is specified in the partitionConfig
+     * @return Collection partition items
+     * @throws ClassInstantiationException if the population of the bean fails
+     * @throws InstancePopulationException if the population of the bean fails
      */
-    private void runProcessorTask(Task task, TaskConfig taskConfig) throws ClassInstantiationException, 
-        InstancePopulationException {
+    @SuppressWarnings("unchecked")
+    private Collection<String> getPartitionItems(Task task, PartitionConfig partitionConfig, String itemsKey) 
+            throws ClassInstantiationException, InstancePopulationException {
         
-        Map<String, String> vmConfig = this.job.getVmConfig();
-        // check the parition function
-        PartitionConfig partitionConfig = taskConfig.getPartitioning();
-        Map<String, String> partitionInput = partitionConfig.getInput();
-        String itemsKey = partitionInput.get(PartitionFunction.ITEMS_KEY);
-        Validate.notNull(itemsKey, "partition items key is required");
         PartitionType partitionType = partitionConfig.getType();
         String output = partitionConfig.getOutput();
-
+        
         Collection<String> items = null;
-
+        
         if(PartitionType.ITEMS.equals(partitionType)) {
 
             Object value = this.context.resolveValue(itemsKey);
@@ -210,28 +211,52 @@ public class Coordinator extends CommonExecutable {
             }
 
             items = (Collection<String>) value;
-            
+
             if(items.isEmpty()) {
                 throw new IllegalArgumentException("empty partition items for task " + getTaskName(task));
             }
-                  
+
         } else if(PartitionType.FUNCTION.equals(partitionType)) {
-            
+
             PartitionFunction partitionFunction = this.partitionFunctionFactory.getPartitionFunction(
                     partitionConfig, context);
             List<Partition> partitions = partitionFunction.partition();
             if(partitions == null || partitions.isEmpty()) {
                 throw new IllegalArgumentException("empty partitions for task " + getTaskName(task));
             }
-            
+
             items = Partition.joinPartitionItems(partitions);
-            
+
             this.context.put(output, items);
-            
+
             itemsKey = Context.getKeyReference(output);
         }
         
+        return items;
+    }
+
+    /**
+     * Create and start a task on a number of processors
+     * @param task
+     * @param taskConfig
+     * @throws ClassInstantiationException if the population of the bean fails
+     * @throws InstancePopulationException if the population of the bean fails
+     * @throws IOException if cloud api calls fail
+     */
+    private void runProcessorTask(Task task, TaskConfig taskConfig) throws ClassInstantiationException, 
+        InstancePopulationException, IOException {
         
+        Map<String, String> vmConfig = this.job.getVmConfig();
+        // check the parition function
+        PartitionConfig partitionConfig = taskConfig.getPartitioning();
+        Map<String, String> partitionInput = partitionConfig.getInput();
+        String itemsKey = partitionInput.get(PartitionFunction.ITEMS_KEY);
+        Validate.notNull(itemsKey, "partition items key is required");
+        
+        // bucket just in case we have long metadata
+        String bucket = (String) this.getJobDataValue(Constants.CLOUD_STORAGE_BUCKET_KEY);
+        String zoneId = (String) this.getJobDataValue(Constants.CLOUD_ZONE_ID);
+          
         Map<String, String> processorInput = new HashMap<>(taskConfig.getInput());
         
         Entry<String, String> partitionItemEntry = null;
@@ -244,51 +269,92 @@ public class Coordinator extends CommonExecutable {
         }
         
         if(partitionItemEntry == null) {
-            throw new IllegalArgumentException("expecting an input key/value for partition item in task " + 
-                    getTaskName(task));
+            throw new IllegalArgumentException("expecting an input key/value for partition item in task " 
+                    + getTaskName(task));
         }
         
+        String itemMetaDataKey = partitionItemEntry.getKey();
+        
         // remove the partition item key/value from the input mapping
-        processorInput.remove(partitionItemEntry.getKey());
+        processorInput.remove(itemMetaDataKey);
+        
+        List<String> activeProcessors = Lists.newArrayList(this.processors);
+        List<String> newProcessors = new ArrayList<>();
         
         List<VmConfig> vmsConfig = new ArrayList<>();
-        int numberOfProcessors = items.size();
         long timestamp = (new Date()).getTime();
+        
+        Collection<String> items = this.getPartitionItems(task, partitionConfig, itemsKey);
+        
+        int numberOfProcessors = items.size();
+        
         int count = 0;
         int index = 0;
         
         for(String item: items) {
+            
+            // add the metadata
             VmMetaData metaData = new VmMetaData();
             
             for(Entry<String, String> entry: processorInput.entrySet()) {
                 String value = (String) this.context.resolveValue(entry.getValue());
                 metaData.addUserValue(entry.getKey(), value);
             }
-            // add the item
-            metaData.addUserValue(partitionItemEntry.getKey(), item);
-
-            String instanceId = VmMetaData.CLOUDEX_VM_PREFIX + (timestamp + count);
-            VmConfig conf = new VmConfig();
-            ObjectUtils.populate(conf, vmConfig, false);
-            conf.setInstanceId(instanceId);
-            conf.setMetaData(metaData);
-
-            /*conf.setImageId(input.getImageId())
-                .setInstanceId(instanceId)
-                .setMetaData(metaData)
-                .setNetworkId(input.getNetworkId())
-                .setVmType(input.getVmType())
-                .setDiskType(input.getDiskType())
-                .setZoneId(zoneId)
-                .setStartupScript(input.getStartupScript());*/
-
-            //reasonNodes.add(instanceId);
             
+            // add the item, first check if it's too long
+            if(item.length() > this.getCloudService().getMaximumMetaDataSize()) {
+                
+                Validate.notBlank(bucket, "bucket is needed as metadata is larger than maximum allowed.");
+                
+                log.info("Metadata too large, using file. Size = " + item.length());
+                // use files instead
+                String itemFilename = new StringBuilder(itemMetaDataKey).append('_').append(timestamp)
+                        .append('_').append(index).append(Constants.DOT_TEXT).toString();  
+                
+                String itemFile = FileUtils.TEMP_FOLDER + itemFilename;
+                // save to file
+                FileUtils.objectToJsonFile(itemFile, ObjectUtils.csvToSet(item));
+                
+                // upload the file to cloud storage
+                this.getCloudService().uploadFileToCloudStorage(itemFile, bucket);
+                // update the meta data with the file value
+                metaData.addUserValue(itemMetaDataKey + VmMetaData.LONG_METADATA_FILE_Suffix, itemFilename);
+                
+                index++;
             
-            vmsConfig.add(conf);
+            } else {
+                
+                metaData.addUserValue(itemMetaDataKey, item);
+            }
             
-            log.info("Create VM Config for " + instanceId);
-            count++;
+            // re-program existing processors
+            if(activeProcessors.size() > 0) {
+                
+                String instanceId = activeProcessors.iterator().next();
+                activeProcessors.remove(activeProcessors.indexOf(instanceId));
+                VmMetaData processorMetaData = this.getCloudService().getMetaData(instanceId, zoneId);
+                processorMetaData.getFollowUp(metaData);
+                this.getCloudService().updateMetadata(metaData, zoneId, instanceId, true);
+                newProcessors.add(instanceId);
+                
+             
+            } else {
+                // start new VMs
+                
+                String instanceId = VmMetaData.CLOUDEX_VM_PREFIX + (timestamp + count);
+                VmConfig conf = new VmConfig();
+                ObjectUtils.populate(conf, vmConfig);
+                conf.setInstanceId(instanceId);
+                conf.setMetaData(metaData);
+
+                newProcessors.add(instanceId);
+                                
+                vmsConfig.add(conf);
+                
+                log.info("Create VM Config for " + instanceId);
+                count++;
+            }
+            
         }
            
     }
@@ -327,6 +393,14 @@ public class Coordinator extends CommonExecutable {
         }
     }
 
+    /**
+     * Get an item from the job data
+     * @param key
+     * @return
+     */
+    private Object getJobDataValue(String key) {
+        return this.job.getData().get(key);
+    }
 
     /**
      * Builder for {@link Coordinator}

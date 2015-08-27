@@ -22,13 +22,18 @@ package io.cloudex.framework.utils;
 import io.cloudex.framework.exceptions.ClassInstantiationException;
 import io.cloudex.framework.exceptions.InstancePopulationException;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.WrapDynaBean;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -40,7 +45,7 @@ import org.apache.commons.logging.LogFactory;
 public final class ObjectUtils {
 
     private static final Log log = LogFactory.getLog(ObjectUtils.class);
-
+    
     public static final Gson GSON = new Gson();
 
     /**
@@ -107,6 +112,46 @@ public final class ObjectUtils {
             log.error("Failed to populate instance: " + bean + ", from map: " + properties, e);
             throw new InstancePopulationException("Unable to populate instance: " + bean, e);
         }
+    }
+    
+    /**
+     * Convert a json string to map
+     * @param json
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> jsonToMap(String json) {
+        return GSON.fromJson(json, HashMap.class);
+    }
+    
+    /**
+     * comma separated string to set
+     * @param csv
+     * @return
+     */
+    public static Set<String> csvToSet(String csv) {
+        Set<String> tokens = new HashSet<>();
+        if(StringUtils.isNotBlank(csv)) {   
+            String [] tokensArr = StringUtils.split(csv, ',');
+            // clean up the tokens
+            //tokens = Sets.newHashSet(tokensArr);
+            for(String token: tokensArr) {
+                tokens.add(token.trim());
+            }
+        } 
+        return tokens; 
+    }
+    
+    /**
+     * retrive the value of a json property
+     * @param json
+     * @param key
+     * @return
+     */
+    public static String getStringPropertyFromJson(String json, String key) {
+        Map<String, Object> map = jsonToMap(json);
+        
+        return (String) map.get(key);
     }
     
 }

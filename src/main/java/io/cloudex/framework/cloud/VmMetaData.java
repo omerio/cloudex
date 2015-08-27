@@ -40,7 +40,10 @@ public class VmMetaData {
     private static final Log log = LogFactory.getLog(VmMetaData.class);
 
     // maximum size of metadata
-    public static final int MAX_METADATA_SIZE = 32768;
+    //public static final int MAX_METADATA_SIZE = 32768;
+    
+    // a meta data entry created as a replacement of a long meta data entry
+    public static final String LONG_METADATA_FILE_Suffix = "File";
     
     // cloud-ex specific metadata
     public static final String CLOUDEX_PREFIX = "cloudex-";
@@ -251,6 +254,20 @@ public class VmMetaData {
      */
     public void setFingerprint(String fingerprint) {
         this.fingerprint = fingerprint;
+    }
+    
+    /**
+     * Some cloud providers require that a follow up metadata to contain a fingerprint signature
+     * @param followUp - the metadata to update
+     * @return metadata with fingerprint populated
+     */
+    public VmMetaData getFollowUp(VmMetaData followUp) {
+        if(followUp == null) {
+            followUp = new VmMetaData();
+        }
+        followUp.setFingerprint(this.getFingerprint());
+        
+        return followUp;
     }
 
 }
