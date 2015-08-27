@@ -56,7 +56,7 @@ public class Processor extends CommonExecutable {
      * 
      * @param metaData - vm instance metadata 
      * @param cloudService - cloud service implementation
-     * @throws IOException 
+     * @throws IOException if cloud api calls fail
      */
     public Processor(CloudService cloudService) throws IOException {
         this(new Builder(cloudService));
@@ -65,7 +65,7 @@ public class Processor extends CommonExecutable {
     /**
      * 
      * @param builder Coordinator builder
-     * @throws IOException 
+     * @throws IOException if cloud api calls fail 
      */
     Processor(Builder builder) throws IOException {
         super();
@@ -215,7 +215,7 @@ public class Processor extends CommonExecutable {
         /**
          * Build a new instance of {@link Coordinator}
          * @return coordinator instance
-         * @throws IOException 
+         * @throws IOException if cloud api calls fail 
          */
         public Processor build() throws IOException {
             return new Processor(this);

@@ -19,6 +19,13 @@
 
 package io.cloudex.framework.cloud;
 
+import io.cloudex.framework.utils.ObjectUtils;
+
+import java.util.List;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 /**
@@ -31,22 +38,32 @@ public class VmConfig {
 
     // for Google, this is an example
     // https://www.googleapis.com/compute/v1/projects/ecarf-1000/zones/us-central1-a
+    @NotNull
+    @Size(min = 1)
     private String zoneId;
 
     // for Google, this is an example
     // https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20140318
+    @NotNull
+    @Size(min = 1)
     private String imageId;
 
     // https://www.googleapis.com/compute/v1/projects/ecarf-1000/zones/us-central1-a/machineTypes/f1-micro
+    @NotNull
+    @Size(min = 1)
     private String vmType;
 
     // for Google, this is an example
     // https://www.googleapis.com/compute/v1/projects/ecarf-1000/global/networks/default
+    @NotNull
+    @Size(min = 1)
     private String networkId;
 
     // for Google, this is an example
     // https://www.googleapis.com/compute/v1/projects/<project-id>/zones/<zone>/diskTypes/pd-ssd
     // https://www.googleapis.com/compute/v1/projects/<project-id>/zones/<zone>/diskTypes/pd-standard
+    @NotNull
+    @Size(min = 1)
     private String diskType;
 
     private String startupScript;
@@ -188,7 +205,21 @@ public class VmConfig {
         vmConfig.setZoneId(this.zoneId);
         return vmConfig;
     }
-
-
+    
+    /**
+     * check if this instance is valid
+     * @return true if valid
+     */
+    public boolean valid() {
+        return ObjectUtils.isValid(VmConfig.class, this);
+    }
+    
+    /**
+     * Get any validation errors
+     * @return a list of validation messages
+     */
+    public List<String> getValidationErrors() {
+        return ObjectUtils.getValidationErrors(VmConfig.class, this);
+    }
 
 }

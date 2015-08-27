@@ -22,11 +22,17 @@ package io.cloudex.framework.utils;
 import io.cloudex.framework.exceptions.ClassInstantiationException;
 import io.cloudex.framework.exceptions.InstancePopulationException;
 
-import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 import com.google.gson.Gson;
 
@@ -47,6 +53,11 @@ public final class ObjectUtils {
     private static final Log log = LogFactory.getLog(ObjectUtils.class);
     
     public static final Gson GSON = new Gson();
+    
+    public static final ValidatorFactory VALIDATOR_FACTORY = Validation.buildDefaultValidatorFactory();
+    
+    public static final Validator VALIDATOR =  VALIDATOR_FACTORY.getValidator();
+    
 
     /**
      * Create an instance of the provided class
@@ -152,6 +163,34 @@ public final class ObjectUtils {
         Map<String, Object> map = jsonToMap(json);
         
         return (String) map.get(key);
+    }
+    
+
+    /**
+     * check if this instance is valid
+     * @param classOfT - class of the object to validate
+     * @param object - the object to validate
+     * @return true if valid, false otherwise
+     */
+    public static <T> boolean isValid(Class<T> classOfT, T object) {
+        Set<ConstraintViolation<T>> violations = ObjectUtils.VALIDATOR.validate(object);
+        return violations.isEmpty();
+    }
+    
+    /**
+     * return a list of validation errors
+     * @param classOfT - class of the object to validate
+     * @param object - the object to validate
+     * @return a list of error messages
+     */
+    public static <T> List<String> getValidationErrors(Class<T> classOfT, T object) {
+        List<String> messages = new ArrayList<String>();
+        Set<ConstraintViolation<T>> violations = ObjectUtils.VALIDATOR.validate(object);
+        for(ConstraintViolation<T> violation: violations) {
+            messages.add(violation.getPropertyPath() + " " + violation.getMessage());
+        }
+
+        return messages;
     }
     
 }

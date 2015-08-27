@@ -21,10 +21,17 @@ package io.cloudex.framework.config;
 
 import io.cloudex.framework.types.ErrorAction;
 import io.cloudex.framework.types.TargetType;
+import io.cloudex.framework.utils.ObjectUtils;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Represents Task configurations detailing how to instantiate a Task object. Details include the 
@@ -48,8 +55,10 @@ public class TaskConfig implements Serializable {
     
     private Set<String> output;
     
+    @NotNull
     private TargetType target;
     
+    @NotNull
     private ErrorAction errorAction;
     
     private CodeConfig code;
@@ -180,6 +189,44 @@ public class TaskConfig implements Serializable {
      */
     public void setPartitioning(PartitionConfig partitioning) {
         this.partitioning = partitioning;
+    }
+    
+    /**
+     * check if this instance is valid
+     * @return true if valid
+     */
+    public boolean valid() {
+        return ObjectUtils.isValid(TaskConfig.class, this)  
+                && BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
+                        StringUtils.isBlank(this.taskName)})
+                && (TargetType.COORDINATOR.equals(this.target) 
+                        || (TargetType.PROCESSOR.equals(this.target) && (this.partitioning != null) 
+                                && this.partitioning.valid()));
+    }
+    
+    /**
+     * Get any validation errors
+     * @return a list of validation messages
+     */
+    public List<String> getValidationErrors() {
+
+        List<String> messages = ObjectUtils.getValidationErrors(TaskConfig.class, this);
+
+        if(!BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
+                StringUtils.isBlank(this.taskName)})) {
+
+            messages.add("either taskName or className is required");
+        }
+        
+        if(TargetType.PROCESSOR.equals(this.target) && (this.partitioning == null)) {
+            messages.add("a valid partition config is required for processor tasks");
+        }
+        
+        if(this.partitioning != null) {
+            messages.addAll(this.partitioning.getValidationErrors());
+        }
+
+        return messages;
     }
 
 }

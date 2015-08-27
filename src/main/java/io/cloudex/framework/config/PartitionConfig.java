@@ -20,9 +20,16 @@
 package io.cloudex.framework.config;
 
 import io.cloudex.framework.types.PartitionType;
+import io.cloudex.framework.utils.ObjectUtils;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Workload partition configurations
@@ -30,11 +37,11 @@ import java.util.Map;
  * @author Omer Dawelbeit (omerio)
  *
  */
-public class PartitionConfig implements Serializable	{
+public class PartitionConfig implements Serializable    {
 
     private static final long serialVersionUID = -8323425744252645077L;
 
-
+    @NotNull
     private PartitionType type;
 
     private String className;
@@ -42,6 +49,7 @@ public class PartitionConfig implements Serializable	{
     // prebuilt functions
     private String functionName;
 
+    @NotNull
     private Map<String, String> input;
 
     private String output;
@@ -114,6 +122,41 @@ public class PartitionConfig implements Serializable	{
      */
     public void setFunctionName(String functionName) {
         this.functionName = functionName;
+    }
+    
+    /**
+     * Determine if this instance is valid
+     * @return true if valid, false otherwise
+     */
+    public boolean valid() {
+        
+        return ObjectUtils.isValid(PartitionConfig.class, this) 
+                && BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
+                        StringUtils.isBlank(this.functionName)})
+                && (PartitionType.ITEMS.equals(this.type) 
+                        || (PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)));
+        
+    }
+    
+    /**
+     * Get any validation errors
+     * @return a list of validation messages
+     */
+    public List<String> getValidationErrors() {
+
+        List<String> messages = ObjectUtils.getValidationErrors(PartitionConfig.class, this);
+        
+        if(!BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
+                StringUtils.isBlank(this.functionName)})) {
+
+            messages.add("either functionName or className is required");
+        }
+        
+        if(PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)) {
+            messages.add("output is required for Function type partition");
+        }
+        
+        return messages;
     }
 
 

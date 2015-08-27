@@ -117,7 +117,12 @@ public class Coordinator extends CommonExecutable {
         this.shutdownProcessors = builder.isShutdownProcessors();
 
         Validate.notNull(this.job, "job must be provided");
-        Validate.isTrue(this.job.isValid(), "job is not valid"); 
+        
+        if(!this.job.valid()) {
+            List<String> messages = this.job.getValidationErrors();
+            log.error("Job is not valid: " + messages);
+            throw new IllegalArgumentException("Job is not valid: " + messages);
+        }
 
         if(builder.getMetaData() != null) {
             this.setMetaData(builder.getMetaData());

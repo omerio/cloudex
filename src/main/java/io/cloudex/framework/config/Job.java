@@ -27,8 +27,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import com.google.gson.stream.JsonReader;
 
@@ -42,12 +48,17 @@ public class Job implements Serializable {
 
     private String id;
 
+    @NotNull
+    @Size(min = 1)
     private Map<String, Object> data;
     
+    @NotNull
     private VmConfig vmConfig;
 
     private ExecutionMode mode;
 
+    @NotNull
+    @Size(min = 1)
     private List<TaskConfig> tasks;
 
 
@@ -131,10 +142,10 @@ public class Job implements Serializable {
 
     /**
      * De-serialize a job instance from a json file.
-     * @param jsonFile
-     * @return
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @param jsonFile - a file path
+     * @return a Job instance
+     * @throws FileNotFoundException if the file is not found
+     * @throws IOException if the json conversion fails
      */
     public static Job fromJsonFile(String jsonFile) throws FileNotFoundException, IOException {
         try(FileReader reader = new FileReader(jsonFile)) {
@@ -144,16 +155,46 @@ public class Job implements Serializable {
 
     /**
      * De-serialize a job instance from a json string.
-     * @param json
-     * @return
+     * @param json - a json string
+     * @return a Job instance
      */
     public static Job fromJsonString(String json) {
         return ObjectUtils.GSON.fromJson(json, Job.class);
     }
-
-    public boolean isValid() {
-        // TODO Auto-generated method stub
-        return false;
+    
+    /**
+     * check if this instance is valid
+     * @return true if valid
+     */
+    public boolean valid() {
+        boolean valid = true;
+        valid = ObjectUtils.isValid(Job.class, this) && this.vmConfig.valid();
+        
+        for(TaskConfig taskConfig: this.tasks) {
+            valid = valid && taskConfig.valid();
+            if(!valid) {
+                break;
+            }
+        }
+        return valid;
+    }
+    
+    /**
+     * Get any validation errors
+     * @return a list of validation messages
+     */
+    public List<String> getValidationErrors() {
+        List<String> messages = ObjectUtils.getValidationErrors(Job.class, this);
+        
+        if(messages.isEmpty()) {
+            messages.addAll(this.vmConfig.getValidationErrors());
+            
+            for(TaskConfig taskConfig: this.tasks) {
+                messages.addAll(taskConfig.getValidationErrors());
+            }
+            
+        }
+        return messages;
     }
 
 }

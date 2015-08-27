@@ -70,11 +70,11 @@ public class PartitionFunctionFactoryImpl implements PartitionFunctionFactory {
 
             Validate.notNull(items, "items to partition are required");
 
-            if(StringUtils.isNoneBlank(config.getFunctionName())) {
+            if(StringUtils.isNotBlank(config.getFunctionName())) {
 
                 function = BuiltInPartitionFunctions.getFunction(config.getFunctionName());
 
-            } else if(StringUtils.isNoneBlank(config.getClassName())) {
+            } else if(StringUtils.isNotBlank(config.getClassName())) {
 
                 function = ObjectUtils.createInstance(PartitionFunction.class, config.getClassName());
 
