@@ -105,6 +105,25 @@ public class VmMetaData {
     public String getStatus() {
         return (String) this.attributes.get(CLOUDEX_STATUS);
     }
+    
+    /**
+     * Get the processor status enum value
+     * @return
+     */
+    public ProcessorStatus getProcessorStatus() { 
+        ProcessorStatus processStatus = null;
+        String status = this.getStatus();
+        if(status != null) {
+            try {
+                processStatus = ProcessorStatus.valueOf(status);
+                
+            } catch(IllegalArgumentException e) {
+                log.error("Failed to parse processor status", e);
+            }
+        }
+        
+        return processStatus;
+    }
 
     /**
      * Get the task code type 
@@ -138,25 +157,6 @@ public class VmMetaData {
     public String getTaskCodeUrl() {
         return (String) this.attributes.get(CLOUDEX_TASK_CODE_URL);
     }
-
-    /**
-     * Get the processor status
-     * @return
-     */
-    public ProcessorStatus getProcessorStatus() {
-        ProcessorStatus processStatus = null;
-        if(this.attributes.get(CLOUDEX_STATUS) != null) {
-            try {
-                processStatus = ProcessorStatus.valueOf((String) this.attributes.get(CLOUDEX_STATUS));
-
-            } catch(IllegalArgumentException e) {
-                log.error("Failed to parse processor status", e);
-            }
-        }
-
-        return processStatus;
-    }
-
 
     /**
      * Get the exception if any

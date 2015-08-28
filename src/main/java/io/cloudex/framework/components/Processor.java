@@ -22,20 +22,20 @@ package io.cloudex.framework.components;
 import io.cloudex.framework.CommonExecutable;
 import io.cloudex.framework.cloud.CloudService;
 import io.cloudex.framework.cloud.VmMetaData;
-import io.cloudex.framework.cloud.VmStatus;
 import io.cloudex.framework.task.Task;
 import io.cloudex.framework.task.factory.TaskFactory;
 import io.cloudex.framework.task.factory.TaskFactoryImpl;
+import io.cloudex.framework.types.ProcessorStatus;
 import io.cloudex.framework.utils.ApiUtils;
 
 import java.io.IOException;
-
-import com.google.common.base.Stopwatch;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.google.common.base.Stopwatch;
 
 
 /**
@@ -104,7 +104,7 @@ public class Processor extends CommonExecutable {
                     stopwatch.start();
 
                     // set status to BUSY
-                    metaData.addValue(VmMetaData.CLOUDEX_STATUS, VmStatus.BUSY.toString());
+                    metaData.addValue(VmMetaData.CLOUDEX_STATUS, ProcessorStatus.BUSY.toString());
                     cloudService.updateMetadata(metaData);
 
                     // run the task
@@ -120,7 +120,7 @@ public class Processor extends CommonExecutable {
                     // finished processing
                     // blank the task type and set the status to READY
                     metaData.clearValues();
-                    metaData.addValue(VmMetaData.CLOUDEX_STATUS, VmStatus.READY.toString());
+                    metaData.addValue(VmMetaData.CLOUDEX_STATUS, ProcessorStatus.READY.toString());
 
                     cloudService.updateMetadata(metaData);
 

@@ -34,7 +34,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Partition {
     
-    private final static Log log = LogFactory.getLog(Partition.class);
+    private static final Log log = LogFactory.getLog(Partition.class);
 
     /**
      * The scale of this partition compared to another partition

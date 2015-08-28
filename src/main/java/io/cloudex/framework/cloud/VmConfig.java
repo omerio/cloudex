@@ -21,6 +21,7 @@ package io.cloudex.framework.cloud;
 
 import io.cloudex.framework.utils.ObjectUtils;
 
+import java.io.Serializable;
 import java.util.List;
 
 import javax.validation.constraints.NotNull;
@@ -32,7 +33,9 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
  * @author Omer Dawelbeit (omerio)
  *
  */
-public class VmConfig {
+public class VmConfig implements Serializable {
+
+    private static final long serialVersionUID = -6635094527551555857L;
 
     private String instanceId;
 

@@ -21,8 +21,8 @@
 package io.cloudex.framework.utils;
 
 import io.cloudex.framework.cloud.VmMetaData;
-import io.cloudex.framework.cloud.VmStatus;
 import io.cloudex.framework.exceptions.ProcessorException;
+import io.cloudex.framework.types.ProcessorStatus;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -61,7 +61,7 @@ public final class ApiUtils {
      * @param exception
      */
     public static void exceptionToCloudExError(VmMetaData metadata, Exception exception) {
-        metadata.addValue(VmMetaData.CLOUDEX_STATUS, VmStatus.ERROR.toString());
+        metadata.addValue(VmMetaData.CLOUDEX_STATUS, ProcessorStatus.ERROR.toString());
         metadata.addValue(VmMetaData.CLOUDEX_EXCEPTION, exception.getClass().getName());
         metadata.addValue(VmMetaData.CLOUDEX_MESSAGE, exception.getMessage());
     }

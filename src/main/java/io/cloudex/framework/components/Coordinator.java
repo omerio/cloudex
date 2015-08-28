@@ -23,7 +23,6 @@ import io.cloudex.framework.CommonExecutable;
 import io.cloudex.framework.cloud.CloudService;
 import io.cloudex.framework.cloud.VmConfig;
 import io.cloudex.framework.cloud.VmMetaData;
-import io.cloudex.framework.cloud.VmStatus;
 import io.cloudex.framework.config.Job;
 import io.cloudex.framework.config.PartitionConfig;
 import io.cloudex.framework.config.TaskConfig;
@@ -38,6 +37,7 @@ import io.cloudex.framework.task.factory.TaskFactory;
 import io.cloudex.framework.task.factory.TaskFactoryImpl;
 import io.cloudex.framework.types.ErrorAction;
 import io.cloudex.framework.types.PartitionType;
+import io.cloudex.framework.types.ProcessorStatus;
 import io.cloudex.framework.types.TargetType;
 import io.cloudex.framework.utils.ApiUtils;
 import io.cloudex.framework.utils.Constants;
@@ -61,7 +61,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 
 
 /**
@@ -404,9 +403,9 @@ public class Coordinator extends CommonExecutable {
                 ApiUtils.block(this.getCloudService().getApiRecheckDelay());
 
                 VmMetaData metaData = this.getCloudService().getMetaData(instanceId, zoneId);
-                ready = VmStatus.READY.equals(metaData.getStatus());
+                ready = ProcessorStatus.READY.equals(metaData.getProcessorStatus());
                 // check for ERROR status
-                if(VmStatus.ERROR.equals(metaData.getStatus())) {
+                if(ProcessorStatus.ERROR.equals(metaData.getProcessorStatus())) {
                     processorException = ApiUtils.exceptionFromCloudExError(metaData, instanceId);
                     log.error(instanceId + " processor has failed", processorException);
                     break;

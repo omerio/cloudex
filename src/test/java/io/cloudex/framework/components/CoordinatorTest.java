@@ -20,18 +20,20 @@
 
 package io.cloudex.framework.components;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
+
+import mockit.integration.junit4.JMockit;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author Omer Dawelbeit (omerio)
  *
  */
+@RunWith(JMockit.class)
 public class CoordinatorTest {
 
     /**
