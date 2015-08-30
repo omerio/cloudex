@@ -43,12 +43,7 @@ public class VmConfigTest {
      */
     @Before
     public void setUp() throws Exception {
-        config = new VmConfig();
-        config.setDiskType("disktype");
-        config.setImageId("imageid");
-        config.setNetworkId("networkid");
-        config.setVmType("vmtype");
-        config.setZoneId("zoneid");
+        config = setup();
     }
 
     /**
@@ -86,6 +81,16 @@ public class VmConfigTest {
     @Test
     public void testGetValidationErrors() {
         assertTrue(config.getValidationErrors().isEmpty());
+    }
+    
+    public static VmConfig setup() {
+        VmConfig config = new VmConfig();
+        config.setDiskType("disktype");
+        config.setImageId("imageid");
+        config.setNetworkId("networkid");
+        config.setVmType("vmtype");
+        config.setZoneId("zoneid");
+        return config;
     }
 
 }

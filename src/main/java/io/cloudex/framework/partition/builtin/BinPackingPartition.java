@@ -81,23 +81,6 @@ public class BinPackingPartition implements PartitionFunction {
         this.items = items;
     }
 
-    /* (non-Javadoc)
-     * @see io.cloudex.framework.partition.PartitionFunction#setInput(java.util.Map)
-     */
-    //@Override
-    /*public void setInput(Map<String, Object> input) {
-        Validate.notNull(input);
-
-        this.maxBinItems = (Long) input.get(MAX_BIN_ITEMS);
-        this.newBinPercentage = (Double) input.get(NEW_BIN_PERCENTAGE);
-        this.numberOfBins = (Integer) input.get(NUMBER_OF_BINS);
-
-        // should provide either numberOfBins or both maxBinItems and newBinPercentage
-        Validate.isTrue(BooleanUtils.xor(
-                new boolean [] { (this.numberOfBins != null), (this.maxBinItems != null) }
-                ), "either numberOfBins or maxBinItems should be provided");
-
-    }*/
 
     /* (non-Javadoc)
      * @see io.cloudex.framework.partition.PartitionFunction#setItems(java.util.List)
@@ -186,18 +169,6 @@ public class BinPackingPartition implements PartitionFunction {
 
     }
 
-    /*
-    @Override
-    public void addItem(Item item) {
-        this.items.add(item);
-    }
-
-    @Override
-    public void addItems(List<Item> items) {
-        this.items.addAll(items);
-
-    }
-     */
 
     /**
      * @param numberOfBins the numberOfBins to set
@@ -219,6 +190,34 @@ public class BinPackingPartition implements PartitionFunction {
      */
     public void setNewBinPercentage(Double newBinPercentage) {
         this.newBinPercentage = newBinPercentage;
+    }
+
+    /**
+     * @return the items
+     */
+    public List<? extends Item> getItems() {
+        return items;
+    }
+
+    /**
+     * @return the maxBinItems
+     */
+    public Long getMaxBinItems() {
+        return maxBinItems;
+    }
+
+    /**
+     * @return the newBinPercentage
+     */
+    public Double getNewBinPercentage() {
+        return newBinPercentage;
+    }
+
+    /**
+     * @return the numberOfBins
+     */
+    public Integer getNumberOfBins() {
+        return numberOfBins;
     }
 
 }

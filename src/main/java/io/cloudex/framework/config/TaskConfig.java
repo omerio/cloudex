@@ -201,7 +201,7 @@ public class TaskConfig implements Serializable {
                         StringUtils.isBlank(this.taskName)})
                 && (TargetType.COORDINATOR.equals(this.target) 
                         || (TargetType.PROCESSOR.equals(this.target) && (this.partitioning != null) 
-                                && this.partitioning.valid()));
+                                && this.partitioning.valid() && (this.output == null)));
     }
     
     /**
@@ -218,10 +218,17 @@ public class TaskConfig implements Serializable {
             messages.add("either taskName or className is required");
         }
         
-        if(TargetType.PROCESSOR.equals(this.target) && (this.partitioning == null)) {
-            messages.add("a valid partition config is required for processor tasks");
+        if(TargetType.PROCESSOR.equals(this.target)) {
+
+            if (this.partitioning == null) {
+                messages.add("a valid partition config is required for processor tasks");
+            }
+            
+            if(this.output != null) {
+                messages.add("processor tasks should not have any output");
+            }
         }
-        
+
         if(this.partitioning != null) {
             messages.addAll(this.partitioning.getValidationErrors());
         }

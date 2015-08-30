@@ -114,14 +114,14 @@ public class Job implements Serializable {
     /**
      * @return the vmConfig
      */
-    public final VmConfig getVmConfig() {
+    public VmConfig getVmConfig() {
         return vmConfig;
     }
 
     /**
      * @param vmConfig the vmConfig to set
      */
-    public final void setVmConfig(VmConfig vmConfig) {
+    public void setVmConfig(VmConfig vmConfig) {
         this.vmConfig = vmConfig;
     }
 

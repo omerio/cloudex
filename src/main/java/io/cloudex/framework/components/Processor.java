@@ -22,11 +22,11 @@ package io.cloudex.framework.components;
 import io.cloudex.framework.CommonExecutable;
 import io.cloudex.framework.cloud.CloudService;
 import io.cloudex.framework.cloud.VmMetaData;
+import io.cloudex.framework.cloud.api.ApiUtils;
 import io.cloudex.framework.task.Task;
 import io.cloudex.framework.task.factory.TaskFactory;
 import io.cloudex.framework.task.factory.TaskFactoryImpl;
 import io.cloudex.framework.types.ProcessorStatus;
-import io.cloudex.framework.utils.ApiUtils;
 
 import java.io.IOException;
 

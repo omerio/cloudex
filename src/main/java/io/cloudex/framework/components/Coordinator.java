@@ -23,6 +23,7 @@ import io.cloudex.framework.CommonExecutable;
 import io.cloudex.framework.cloud.CloudService;
 import io.cloudex.framework.cloud.VmConfig;
 import io.cloudex.framework.cloud.VmMetaData;
+import io.cloudex.framework.cloud.api.ApiUtils;
 import io.cloudex.framework.config.Job;
 import io.cloudex.framework.config.PartitionConfig;
 import io.cloudex.framework.config.TaskConfig;
@@ -39,7 +40,6 @@ import io.cloudex.framework.types.ErrorAction;
 import io.cloudex.framework.types.PartitionType;
 import io.cloudex.framework.types.ProcessorStatus;
 import io.cloudex.framework.types.TargetType;
-import io.cloudex.framework.utils.ApiUtils;
 import io.cloudex.framework.utils.Constants;
 import io.cloudex.framework.utils.FileUtils;
 import io.cloudex.framework.utils.ObjectUtils;
@@ -95,7 +95,7 @@ public class Coordinator extends CommonExecutable {
      * @param cloudService - the cloud service implementation
      * @throws IOException if any of the cloud api calls fail
      */
-    public Coordinator(Job job, VmMetaData metaData, CloudService cloudService) throws IOException {
+    public Coordinator(Job job, CloudService cloudService) throws IOException {
         this(new Builder(job, cloudService));
     }
 

@@ -18,7 +18,7 @@
  */
 
 
-package io.cloudex.framework.utils;
+package io.cloudex.framework.cloud.api;
 
 import io.cloudex.framework.cloud.VmMetaData;
 import io.cloudex.framework.exceptions.ProcessorException;

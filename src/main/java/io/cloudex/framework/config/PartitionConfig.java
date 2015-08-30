@@ -19,6 +19,7 @@
 
 package io.cloudex.framework.config;
 
+import io.cloudex.framework.partition.PartitionFunction;
 import io.cloudex.framework.types.PartitionType;
 import io.cloudex.framework.utils.ObjectUtils;
 
@@ -134,7 +135,8 @@ public class PartitionConfig implements Serializable    {
                 && BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
                         StringUtils.isBlank(this.functionName)})
                 && (PartitionType.ITEMS.equals(this.type) 
-                        || (PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)));
+                        || (PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)))
+                && (this.input.get(PartitionFunction.ITEMS_KEY) != null);
         
     }
     
@@ -152,8 +154,12 @@ public class PartitionConfig implements Serializable    {
             messages.add("either functionName or className is required");
         }
         
-        if(PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)) {
+        if(PartitionType.FUNCTION.equals(this.type) && StringUtils.isBlank(this.output)) {
             messages.add("output is required for Function type partition");
+        }
+        
+        if(this.input.get(PartitionFunction.ITEMS_KEY) == null) {
+            messages.add("expecting an input with key items");
         }
         
         return messages;

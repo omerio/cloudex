@@ -32,6 +32,19 @@ import java.util.List;
 public final class PartitionUtils {
 
     /**
+     * Sums a list of numbers
+     * @param items
+     * @return
+     */
+    public static Long sum(List<Item> items) {
+        long sum = 0;
+        for(Item item: items) {
+            sum += item.getWeight();
+        }
+        return sum;
+    }
+
+    /**
      * Sums a list of numbers, if a number is greater than max only max will be summed
      * @param items
      * @return

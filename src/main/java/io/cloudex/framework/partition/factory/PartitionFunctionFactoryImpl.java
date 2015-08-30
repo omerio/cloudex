@@ -35,6 +35,8 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+import com.google.common.collect.Lists;
+
 /**
  * A factory responsible for creating partitioning functions of type PartitionFunction
  * @author Omer Dawelbeit (omerio)
@@ -83,7 +85,8 @@ public class PartitionFunctionFactoryImpl implements PartitionFunctionFactory {
             }
 
             ObjectUtils.populate(function, input);
-            function.setItems(items);
+            // make a copy
+            function.setItems(Lists.newArrayList(items));
 
         }
 
