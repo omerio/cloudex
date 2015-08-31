@@ -1,0 +1,37 @@
+{
+    "id": "my-job",
+    "mode": "Serial",
+    "vmConfig": {
+        "zoneId": "somezone",
+        "imageId": "imagename",
+        "vmType": "n1-standard-1",
+        "networkId": "default",
+        "diskType": "SSD"
+    },
+    "data": {
+      "bucket":"testBucket",
+      "table":"mytable",
+      "schema": "myschemafile.txt"
+    },
+    "tasks": [{
+      "id": "test-task",
+      "className": "some.package.SomeClass2",
+      "code": {
+        "location": "LOCAL"
+      },
+      "target": "PROCESSOR",
+      "input": {
+        "schema": "#schema",
+        "bucket": "#bucket",
+        "termsFile": "#schemaTermsFile",
+        "files": "#fileItems"
+      },
+      "partitioning": {
+        "type": "ITEMS",
+        "input": {
+          "items": "#fileItems"
+        }
+      },
+      "errorAction": "EXIT"
+    }]
+}

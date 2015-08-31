@@ -92,6 +92,21 @@ public class PartitionConfigTest {
     }
     
     @Test
+    public void testValidTypeItems() {
+        PartitionConfig config = new PartitionConfig();
+        //config.setFunctionName("TestFunction");
+        config.setType(PartitionType.ITEMS);
+       
+        Map<String, String> input = new HashMap<>();
+        input.put(PartitionFunction.ITEMS_KEY, "#items");
+        config.setInput(input);
+        
+        assertTrue(config.valid());
+        assertEquals(0, config.getValidationErrors().size());
+        
+    }
+    
+    @Test
     public void testInValidOutput() {
         
         config.setOutput(null);

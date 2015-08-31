@@ -124,6 +124,14 @@ public class VmMetaData {
         
         return processStatus;
     }
+    
+    /**
+     * Set the processor status in this metadata
+     * @param status - the process status {@link ProcessorStatus}
+     */
+    public void setProcessorStatus(ProcessorStatus status) {
+        this.attributes.put(CLOUDEX_STATUS, status.toString());
+    }
 
     /**
      * Get the task code type 
@@ -141,6 +149,14 @@ public class VmMetaData {
         }
         return codeType;
     }
+    
+    /**
+     * Set the processor code location type
+     * @param codeType - the code location {@link CodeLocation}
+     */
+    public void setTaskCodeType(CodeLocation codeType) {
+        this.attributes.put(CLOUDEX_TASK_CODE_TYPE, codeType.toString());
+    }
 
     /**
      * Get the processor status
@@ -148,6 +164,14 @@ public class VmMetaData {
      */
     public String getTaskClass() {
         return (String) this.attributes.get(CLOUDEX_TASK_CLASS);
+    }
+    
+    /**
+     * Set the processor task class
+     * @param taskClass - the class name to set
+     */
+    public void setTaskClass(String taskClass) {
+        this.attributes.put(CLOUDEX_TASK_CLASS, taskClass);
     }
 
     /**
@@ -165,6 +189,14 @@ public class VmMetaData {
     public String getException() {
         return (String) this.attributes.get(CLOUDEX_EXCEPTION);
     }
+    
+    /**
+     * Sets the exception class name
+     * @param exp - the exception
+     */
+    public void setException(Exception exp) {
+        this.attributes.put(CLOUDEX_EXCEPTION, exp.getClass().getName());
+    }
 
     /**
      * Get the message if any
@@ -172,6 +204,24 @@ public class VmMetaData {
      */
     public String getMessage() {
         return (String) this.attributes.get(CLOUDEX_MESSAGE);
+    }
+    
+    /**
+     * Sets the processor error message 
+     * @param message - the error message
+     */
+    public void setMessage(String message) {
+        this.attributes.put(CLOUDEX_MESSAGE, message);
+    }
+    
+    /**
+     * From an exception populate a cloudex metadata error
+     * @param exception - the exception
+     */
+    public void exceptionToCloudExError(Exception exception) {
+        this.setProcessorStatus(ProcessorStatus.ERROR);
+        this.setException(exception);
+        this.setMessage(exception.getMessage());
     }
     
     /**
@@ -212,7 +262,7 @@ public class VmMetaData {
      * @param key
      * @param value
      */
-    public VmMetaData addValue(String key, String value) {
+    public VmMetaData addValue1(String key, String value) {
         this.attributes.put(key, value);
         return this;
     }

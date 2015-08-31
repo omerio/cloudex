@@ -28,14 +28,12 @@ import io.cloudex.framework.exceptions.ClassInstantiationException;
 import io.cloudex.framework.exceptions.InstancePopulationException;
 import io.cloudex.framework.task.CommonTask;
 import io.cloudex.framework.task.Task;
-import io.cloudex.framework.task.builtin.BuiltInTasks;
 import io.cloudex.framework.types.TargetType;
 import io.cloudex.framework.utils.ObjectUtils;
 
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
@@ -50,23 +48,15 @@ public class TaskFactoryImpl implements TaskFactory {
         
         Validate.notNull(config);
         Validate.notNull(config.getTarget());
-        
+  
+        // TODO Deal with remote code
         Task task = null;
         if(TargetType.COORDINATOR.equals(config.getTarget())) {
             
-            if(StringUtils.isNotBlank(config.getTaskName())) {
-                // built-in task
-                task = BuiltInTasks.getTask(config.getTaskName());
-                
-            } else if(StringUtils.isNoneBlank(config.getClassName())) {
-                
-                // TODO Deal with remote code
-                
-                task = ObjectUtils.createInstance(CommonTask.class, config.getClassName());
-                
-            } else {
-                throw new IllegalArgumentException("either functionName or className should be provided");
-            }
+            String className = config.getClassName();
+            Validate.notNull(className, "task className is required");
+            
+            task = ObjectUtils.createInstance(CommonTask.class, config.getClassName());;
             
             Map<String, Object> input = context.resolveValues(config.getInput());
             ObjectUtils.populate(task, input);
@@ -88,7 +78,8 @@ public class TaskFactoryImpl implements TaskFactory {
         // use the metadata to auto populate the class properties, we strip a user- prefix on the metadata names then
         // just use the result as the property name
         String className = metaData.getTaskClass();
-
+        
+        Validate.notNull(className, "task className is required");
         // TODO deal with remote code
         
         task = ObjectUtils.createInstance(CommonTask.class, className);

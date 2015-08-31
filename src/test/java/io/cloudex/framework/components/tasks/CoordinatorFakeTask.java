@@ -1,6 +1,6 @@
 package io.cloudex.framework.components.tasks;
 
-import io.cloudex.framework.components.CoordinatorTest;
+import io.cloudex.framework.components.CoordinatorRunCoordinatorTaskTest;
 import io.cloudex.framework.task.CommonTask;
 import static org.junit.Assert.*;
 
@@ -63,11 +63,11 @@ public class CoordinatorFakeTask extends CommonTask {
             throw new IOException("Task has failed");
         } 
         
-        assertEquals(CoordinatorTest.BUCKET_VALUE, bucket);
-        assertEquals(CoordinatorTest.SCHEMA_VALUE, schema);
+        assertEquals(CoordinatorRunCoordinatorTaskTest.BUCKET_VALUE, bucket);
+        assertEquals(CoordinatorRunCoordinatorTaskTest.SCHEMA_VALUE, schema);
         
         // set the output values
-        this.output.put(CoordinatorTest.SCHEMA_TERMS_FILE_KEY, CoordinatorTest.SCHEMA_TERMS_FILE_VALUE);
+        this.output.put(CoordinatorRunCoordinatorTaskTest.SCHEMA_TERMS_FILE_KEY, CoordinatorRunCoordinatorTaskTest.SCHEMA_TERMS_FILE_VALUE);
         
         // add some other output
         this.output.put("somekey", "undeclared_value");

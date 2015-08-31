@@ -157,7 +157,7 @@ public class Partition {
 
                 Double scale = (bin.size() == 1) ? bin.get(0).getScale() : 1d;
 
-                log.info("Bin weight: " + binWeight + ", bin items: " + bin.size() + ", scale: " + scale);
+                log.debug("Bin weight: " + binWeight + ", bin items: " + bin.size() + ", scale: " + scale);
 
                 totalWeight += binWeight;
 
@@ -165,7 +165,7 @@ public class Partition {
                 binItems.add(itemsStr);
 
             }
-            log.info("Total weight of all items: " + totalWeight);
+            log.debug("Total weight of all items: " + totalWeight);
         }
 
         return binItems;

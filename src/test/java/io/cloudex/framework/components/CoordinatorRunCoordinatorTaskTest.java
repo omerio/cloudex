@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import io.cloudex.framework.cloud.CloudService;
 import io.cloudex.framework.cloud.VmMetaData;
 import io.cloudex.framework.config.Job;
@@ -32,6 +33,7 @@ import io.cloudex.framework.config.TaskConfig;
 import io.cloudex.framework.task.CommonTask;
 import io.cloudex.framework.types.ErrorAction;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,7 +53,7 @@ import com.google.common.collect.Lists;
  *
  */
 @RunWith(JMockit.class)
-public class CoordinatorTest {
+public class CoordinatorRunCoordinatorTaskTest {
     
     public static final String SCHEMA_TERMS_FILE_VALUE = "schema_terms_file.json";
     public static final String SCHEMA_TERMS_FILE_KEY = "schemaTermsFile";
@@ -169,5 +171,47 @@ public class CoordinatorTest {
         Context context = coordinator.getContext();
         assertFalse(context.containsKey(SCHEMA_TERMS_FILE_KEY));
     }
-
+    
+    private Coordinator getCoordinator() throws FileNotFoundException, IOException {
+        Job job = JobTest.loadJob("CoordinatorTest3.json");
+        TaskConfig task = job.getTasks().get(0);
+        job.setTasks(Lists.newArrayList(task));
+           
+        Coordinator coordinator = new Coordinator(job, cloudService);
+        Context context = coordinator.getContext();
+        assertFalse(context.containsKey(SCHEMA_TERMS_FILE_KEY));
+        coordinator.getProcessors().add("processor1");
+        coordinator.getProcessors().add("processor2");
+        coordinator.getProcessors().add("processor3");
+        return coordinator;
+    }
+    
+    @Test
+    public void testInjectProcessorsIntoTask() throws FileNotFoundException, IOException {
+        
+        Coordinator coordinator = getCoordinator();
+        coordinator.run();
+        
+        Context context = coordinator.getContext();
+        assertTrue(context.containsKey(SCHEMA_TERMS_FILE_KEY));
+        assertEquals(SCHEMA_TERMS_FILE_VALUE, context.get(SCHEMA_TERMS_FILE_KEY));
+        
+        assertFalse(context.containsKey("somekey"));
+        assertEquals(3, coordinator.getProcessors().size());
+    }
+    
+    @Test(expected = IOException.class)
+    public void testInjectProcessorsIntoTaskFail() throws FileNotFoundException, IOException {
+        Coordinator coordinator = getCoordinator();
+        Context context = coordinator.getContext();
+        context.put("modify", true);
+        
+        coordinator.run();
+        
+        assertTrue(context.containsKey(SCHEMA_TERMS_FILE_KEY));
+        assertEquals(SCHEMA_TERMS_FILE_VALUE, context.get(SCHEMA_TERMS_FILE_KEY));
+        
+        assertFalse(context.containsKey("somekey"));
+        assertEquals(3, coordinator.getProcessors().size());
+    }
 }

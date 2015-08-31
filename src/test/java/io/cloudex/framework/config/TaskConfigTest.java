@@ -63,10 +63,10 @@ public class TaskConfigTest {
     @Test
     public void testInvalidClassTaskName() {
         TaskConfig config = setup(TargetType.COORDINATOR);
-        config.setTaskName("TaskName");
+        config.setClassName(null);
         assertFalse(config.valid());
         assertEquals(1, config.getValidationErrors().size());
-        assertEquals("either taskName or className is required", config.getValidationErrors().get(0));
+        assertEquals("className may not be null", config.getValidationErrors().get(0));
     }
     
     /**

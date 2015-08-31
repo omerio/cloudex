@@ -1,0 +1,76 @@
+{
+    "id": "my-job",
+    "mode": "Serial",
+    "vmConfig": {
+        "zoneId": "somezone",
+        "imageId": "imagename",
+        "vmType": "n1-standard-1",
+        "networkId": "default",
+        "diskType": "SSD"
+    },
+    "data": {
+      "bucket":"testBucket",
+      "table":"mytable",
+      "schema": "myschemafile.txt",
+      "numberOfNodes": 5,
+      "maxItemsPerP": 200000,
+      "maxFileSizePerNode": 120000,
+      "newNodePercentage": 0.0
+    },
+    "tasks": [{
+      "id": "first-task",
+      "className": "io.cloudex.framework.components.tasks.CoordinatorFakeTask1",
+      "code": {
+        "location": "LOCAL"
+      },
+      "target": "COORDINATOR",
+      "input": {
+        "bucket": "#bucket",
+        "schema": "#schema",
+        "processors": "#processors",
+        "modify": "#modify"
+      },
+      "output": ["schemaTermsFile"],
+      "errorAction": "EXIT"
+    },{
+      "id": "second-task",
+      "className": "some.package.SomeClass1",
+      "code": {
+        "location": "LOCAL"
+      },
+      "target": "COORDINATOR",
+      "input": {
+        "bucket": "#bucket",
+        "schemaTermsFile": "#schemaTermsFile",
+        "numberOfNodes": "#numberOfNodes",
+        "newNodePercentage": 0.0
+      },
+      "output": ["fileItems"],
+      "errorAction": "EXIT"
+    },{
+      "id": "third-task",
+      "className": "some.package.SomeClass2",
+      "code": {
+        "location": "LOCAL"
+      },
+      "target": "PROCESSOR",
+      "input": {
+        "schema": "#schema",
+        "bucket": "#bucket",
+        "termsFile": "#schemaTermsFile",
+        "files": "#filePartitions"
+      },
+      "partitioning": {
+        "type": "FUNCTION",
+        "className": "some.package.BinPackingPartition",
+        "input": {
+          "items": "#fileItems",
+          "newBinPercentage": "#newNodePercentage",
+          "maxBinItems": "#maxFileSizePerNode",
+          "numberOfBins": "#numberOfNodes"
+        },
+        "output": "filePartitions"
+      },
+      "errorAction": "EXIT"
+    }]
+}

@@ -30,9 +30,6 @@ import java.util.Set;
 
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Represents Task configurations detailing how to instantiate a Task object. Details include the 
  * Task inputs, outputs, code, target, etc...
@@ -46,10 +43,11 @@ public class TaskConfig implements Serializable {
 
     private String id;
     
+    @NotNull
     private String className;
     
     // predefined task name
-    private String taskName;
+    //private String taskName;
     
     private Map<String, String> input;
     
@@ -93,19 +91,6 @@ public class TaskConfig implements Serializable {
         this.className = className;
     }
 
-    /**
-     * @return the taskName
-     */
-    public String getTaskName() {
-        return taskName;
-    }
-
-    /**
-     * @param taskName the taskName to set
-     */
-    public void setTaskName(String taskName) {
-        this.taskName = taskName;
-    }
 
     /**
      * @return input
@@ -197,8 +182,6 @@ public class TaskConfig implements Serializable {
      */
     public boolean valid() {
         return ObjectUtils.isValid(TaskConfig.class, this)  
-                && BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
-                        StringUtils.isBlank(this.taskName)})
                 && (TargetType.COORDINATOR.equals(this.target) 
                         || (TargetType.PROCESSOR.equals(this.target) && (this.partitioning != null) 
                                 && this.partitioning.valid() && (this.output == null)));
@@ -211,12 +194,6 @@ public class TaskConfig implements Serializable {
     public List<String> getValidationErrors() {
 
         List<String> messages = ObjectUtils.getValidationErrors(TaskConfig.class, this);
-
-        if(!BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
-                StringUtils.isBlank(this.taskName)})) {
-
-            messages.add("either taskName or className is required");
-        }
         
         if(TargetType.PROCESSOR.equals(this.target)) {
 

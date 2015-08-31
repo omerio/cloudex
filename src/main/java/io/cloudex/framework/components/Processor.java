@@ -104,7 +104,7 @@ public class Processor extends CommonExecutable {
                     stopwatch.start();
 
                     // set status to BUSY
-                    metaData.addValue(VmMetaData.CLOUDEX_STATUS, ProcessorStatus.BUSY.toString());
+                    metaData.setProcessorStatus(ProcessorStatus.BUSY);
                     cloudService.updateMetadata(metaData);
 
                     // run the task
@@ -120,7 +120,7 @@ public class Processor extends CommonExecutable {
                     // finished processing
                     // blank the task type and set the status to READY
                     metaData.clearValues();
-                    metaData.addValue(VmMetaData.CLOUDEX_STATUS, ProcessorStatus.READY.toString());
+                    metaData.setProcessorStatus(ProcessorStatus.READY);
 
                     cloudService.updateMetadata(metaData);
 
@@ -154,7 +154,7 @@ public class Processor extends CommonExecutable {
                     metaData = cloudService.getMetaData(false);
                     // blank the task type and set the status to ERROR
                     metaData.clearValues();
-                    ApiUtils.exceptionToCloudExError(metaData, e);
+                    metaData.exceptionToCloudExError(e);
                     cloudService.updateMetadata(metaData);
 
                     // wait until we get further instructions

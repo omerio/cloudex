@@ -132,10 +132,10 @@ public class PartitionConfig implements Serializable    {
     public boolean valid() {
         
         return ObjectUtils.isValid(PartitionConfig.class, this) 
-                && BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
-                        StringUtils.isBlank(this.functionName)})
                 && (PartitionType.ITEMS.equals(this.type) 
-                        || (PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)))
+                        || (PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)
+                                && BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
+                                        StringUtils.isBlank(this.functionName)})))
                 && (this.input.get(PartitionFunction.ITEMS_KEY) != null);
         
     }
@@ -147,15 +147,18 @@ public class PartitionConfig implements Serializable    {
     public List<String> getValidationErrors() {
 
         List<String> messages = ObjectUtils.getValidationErrors(PartitionConfig.class, this);
-        
-        if(!BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
-                StringUtils.isBlank(this.functionName)})) {
+            
+        if(PartitionType.FUNCTION.equals(this.type))  { 
+            if(StringUtils.isBlank(this.output)) {
 
-            messages.add("either functionName or className is required");
-        }
-        
-        if(PartitionType.FUNCTION.equals(this.type) && StringUtils.isBlank(this.output)) {
-            messages.add("output is required for Function type partition");
+                messages.add("output is required for Function type partition");
+            }
+
+            if(!BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
+                    StringUtils.isBlank(this.functionName)})) {
+
+                messages.add("either functionName or className is required");
+            }
         }
         
         if(this.input.get(PartitionFunction.ITEMS_KEY) == null) {

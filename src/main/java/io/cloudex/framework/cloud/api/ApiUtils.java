@@ -40,7 +40,7 @@ public final class ApiUtils {
 
     private static final Log log = LogFactory.getLog(ApiUtils.class);
     
-    private static final String PROCESSOR_EXCEPTION = "EVM Exception: ";
+    private static final String PROCESSOR_EXCEPTION = "Processor Exception: ";
 
     /**
      * Block for the number of provided seconds
@@ -54,18 +54,7 @@ public final class ApiUtils {
             log.warn("wait interrupted", e1);
         }
     }
-    
-    /**
-     * From an exception populate a cloudex metadata error
-     * @param metadata
-     * @param exception
-     */
-    public static void exceptionToCloudExError(VmMetaData metadata, Exception exception) {
-        metadata.addValue(VmMetaData.CLOUDEX_STATUS, ProcessorStatus.ERROR.toString());
-        metadata.addValue(VmMetaData.CLOUDEX_EXCEPTION, exception.getClass().getName());
-        metadata.addValue(VmMetaData.CLOUDEX_MESSAGE, exception.getMessage());
-    }
-    
+      
     /**
      * Return an IOException from the metaData error
      * @param metaData
