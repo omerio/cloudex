@@ -34,6 +34,7 @@ import io.cloudex.framework.utils.ObjectUtils;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
@@ -79,14 +80,15 @@ public class TaskFactoryImpl implements TaskFactory {
         // just use the result as the property name
         String className = metaData.getTaskClass();
         
-        Validate.notNull(className, "task className is required");
-        // TODO deal with remote code
-        
-        task = ObjectUtils.createInstance(CommonTask.class, className);
-        Map<String, String> input = metaData.getUserMetaData();
-        ObjectUtils.populate(task, input);
-        task.setCloudService(cloudService);
-        
+        if(StringUtils.isNotBlank(className)) {
+            //Validate.notNull(className, "task className is required");
+            // TODO deal with remote code
+
+            task = ObjectUtils.createInstance(CommonTask.class, className);
+            Map<String, String> input = metaData.getUserMetaData();
+            ObjectUtils.populate(task, input);
+            task.setCloudService(cloudService);
+        }
         return task;
     }
 

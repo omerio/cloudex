@@ -1,8 +1,9 @@
 package io.cloudex.framework.components.tasks;
 
-import io.cloudex.framework.components.CoordinatorRunCoordinatorTaskTest;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import io.cloudex.framework.components.ProcessorTest;
 import io.cloudex.framework.task.CommonTask;
-import static org.junit.Assert.*;
 
 import java.io.IOException;
 
@@ -63,14 +64,11 @@ public class ProcessorFakeTask extends CommonTask {
             throw new IOException("Task has failed");
         } 
         
-        assertEquals(CoordinatorRunCoordinatorTaskTest.BUCKET_VALUE, bucket);
-        assertEquals(CoordinatorRunCoordinatorTaskTest.SCHEMA_VALUE, schema);
+        assertEquals(ProcessorTest.BUCKET_VALUE, bucket);
+        assertEquals(ProcessorTest.SCHEMA_VALUE, schema);
         
-        // set the output values
-        this.output.put(CoordinatorRunCoordinatorTaskTest.SCHEMA_TERMS_FILE_KEY, CoordinatorRunCoordinatorTaskTest.SCHEMA_TERMS_FILE_VALUE);
+        this.cloudService.createCloudStorageBucket(bucket, "mylocation");
         
-        // add some other output
-        this.output.put("somekey", "undeclared_value");
     }
 
 }
