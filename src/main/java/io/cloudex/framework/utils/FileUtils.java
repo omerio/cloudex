@@ -55,10 +55,25 @@ public final class FileUtils {
     public static final String TEMP_FOLDER = System.getProperty("java.io.tmpdir") + PATH_SEPARATOR;
 
     public static final byte [] SEPARATOR = System.getProperty("line.separator").getBytes();
+        
+    public static final Gson GSON = new Gson();
+    
+    /**
+     * The number of bytes in a kilobyte.
+     */
+    public static final long ONE_KB = 1024;
+
+    /**
+     * The number of bytes in a megabyte.
+     */
+    public static final long ONE_MB = ONE_KB * ONE_KB;
+
+    /**
+     * The number of bytes in a gigabyte.
+     */
+    public static final long ONE_GB = ONE_KB * ONE_MB;
     
     private static final int BUFFER = 1024 * 8;
-    
-    public static final Gson GSON = new Gson();
     
     /**
      * Delete the file with the provided string

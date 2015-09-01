@@ -20,13 +20,13 @@
 package io.cloudex.framework.components;
 
 import io.cloudex.framework.CommonExecutable;
-import io.cloudex.framework.cloud.CloudService;
-import io.cloudex.framework.cloud.VmConfig;
-import io.cloudex.framework.cloud.VmMetaData;
 import io.cloudex.framework.cloud.api.ApiUtils;
+import io.cloudex.framework.cloud.api.CloudService;
+import io.cloudex.framework.cloud.entities.VmMetaData;
 import io.cloudex.framework.config.Job;
 import io.cloudex.framework.config.PartitionConfig;
 import io.cloudex.framework.config.TaskConfig;
+import io.cloudex.framework.config.VmConfig;
 import io.cloudex.framework.exceptions.ClassInstantiationException;
 import io.cloudex.framework.exceptions.InstancePopulationException;
 import io.cloudex.framework.partition.PartitionFunction;

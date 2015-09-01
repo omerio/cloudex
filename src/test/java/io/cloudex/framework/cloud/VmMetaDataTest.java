@@ -21,6 +21,7 @@
 package io.cloudex.framework.cloud;
 
 import static org.junit.Assert.*;
+import io.cloudex.framework.cloud.entities.VmMetaData;
 import io.cloudex.framework.types.CodeLocation;
 import io.cloudex.framework.types.ProcessorStatus;
 
@@ -72,7 +73,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getStatus()}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getStatus()}.
      */
     @Test
     public void testGetStatus() {
@@ -80,7 +81,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getTaskCodeType()}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getTaskCodeType()}.
      */
     @Test
     public void testGetTaskCodeType() {
@@ -88,7 +89,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getTaskClass()}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getTaskClass()}.
      */
     @Test
     public void testGetTaskClass() {
@@ -96,7 +97,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getTaskCodeUrl()}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getTaskCodeUrl()}.
      */
     @Test
     public void testGetTaskCodeUrl() {
@@ -104,7 +105,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getProcessorStatus()}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getProcessorStatus()}.
      */
     @Test
     public void testGetProcessorStatus() {
@@ -112,7 +113,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getException()}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getException()}.
      */
     @Test
     public void testGetException() {
@@ -120,7 +121,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getMessage()}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getMessage()}.
      */
     @Test
     public void testGetMessage() {
@@ -128,7 +129,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getUserMetaData()}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getUserMetaData()}.
      */
     @Test
     public void testGetUserMetaData() {
@@ -158,7 +159,7 @@ public class VmMetaDataTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmMetaData#getFollowUp(io.cloudex.framework.cloud.VmMetaData)}.
+     * Test method for {@link io.cloudex.framework.cloud.entities.VmMetaData#getFollowUp(io.cloudex.framework.cloud.entities.VmMetaData)}.
      */
     @Test
     public void testGetFollowUp() {

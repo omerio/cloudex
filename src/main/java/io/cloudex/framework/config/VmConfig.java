@@ -17,8 +17,9 @@
  * limitations under the License.
  */
 
-package io.cloudex.framework.cloud;
+package io.cloudex.framework.config;
 
+import io.cloudex.framework.cloud.entities.VmMetaData;
 import io.cloudex.framework.utils.ObjectUtils;
 
 import java.io.Serializable;
@@ -36,8 +37,6 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 public class VmConfig implements Serializable {
 
     private static final long serialVersionUID = -6635094527551555857L;
-
-    private String instanceId;
 
     // for Google, this is an example
     // https://www.googleapis.com/compute/v1/projects/ecarf-1000/zones/us-central1-a
@@ -71,7 +70,9 @@ public class VmConfig implements Serializable {
 
     private String startupScript;
 
-    private VmMetaData metaData;
+    private transient VmMetaData metaData;
+    
+    private transient String instanceId;
 
     /**
      * @return the instanceId

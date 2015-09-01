@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package io.cloudex.framework.cloud.api;
+package io.cloudex.framework.cloud.entities;
 
 import io.cloudex.framework.utils.Constants;
 

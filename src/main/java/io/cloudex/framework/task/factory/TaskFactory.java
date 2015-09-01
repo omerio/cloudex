@@ -20,8 +20,8 @@
 
 package io.cloudex.framework.task.factory;
 
-import io.cloudex.framework.cloud.CloudService;
-import io.cloudex.framework.cloud.VmMetaData;
+import io.cloudex.framework.cloud.api.CloudService;
+import io.cloudex.framework.cloud.entities.VmMetaData;
 import io.cloudex.framework.components.Context;
 import io.cloudex.framework.config.TaskConfig;
 import io.cloudex.framework.exceptions.ClassInstantiationException;

@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import io.cloudex.framework.config.VmConfig;
 
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class VmConfigTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmConfig#valid()}.
+     * Test method for {@link io.cloudex.framework.config.VmConfig#valid()}.
      */
     @Test
     public void testValid() {
@@ -76,7 +77,7 @@ public class VmConfigTest {
     }
 
     /**
-     * Test method for {@link io.cloudex.framework.cloud.VmConfig#getValidationErrors()}.
+     * Test method for {@link io.cloudex.framework.config.VmConfig#getValidationErrors()}.
      */
     @Test
     public void testGetValidationErrors() {

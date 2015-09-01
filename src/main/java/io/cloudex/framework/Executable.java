@@ -19,8 +19,8 @@
 
 package io.cloudex.framework;
 
-import io.cloudex.framework.cloud.CloudService;
-import io.cloudex.framework.cloud.VmMetaData;
+import io.cloudex.framework.cloud.api.CloudService;
+import io.cloudex.framework.cloud.entities.VmMetaData;
 
 import java.io.IOException;
 

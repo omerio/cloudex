@@ -19,7 +19,6 @@
 
 package io.cloudex.framework.config;
 
-import io.cloudex.framework.cloud.VmConfig;
 import io.cloudex.framework.types.ExecutionMode;
 import io.cloudex.framework.utils.ObjectUtils;
 

@@ -20,7 +20,7 @@
 
 package io.cloudex.framework.cloud.api;
 
-import io.cloudex.framework.cloud.VmMetaData;
+import io.cloudex.framework.cloud.entities.VmMetaData;
 import io.cloudex.framework.exceptions.ProcessorException;
 import io.cloudex.framework.types.ProcessorStatus;
 

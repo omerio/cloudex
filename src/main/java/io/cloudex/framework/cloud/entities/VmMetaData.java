@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package io.cloudex.framework.cloud;
+package io.cloudex.framework.cloud.entities;
 
 import io.cloudex.framework.types.CodeLocation;
 import io.cloudex.framework.types.ProcessorStatus;

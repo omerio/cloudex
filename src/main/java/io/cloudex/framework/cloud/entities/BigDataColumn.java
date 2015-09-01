@@ -18,40 +18,62 @@
  */
 
 
-package io.cloudex.framework.utils;
+package io.cloudex.framework.cloud.entities;
 
 /**
- * CloudEx constants
+ * Represents a column in a Big Data table
  * @author Omer Dawelbeit (omerio)
  *
  */
-public final class Constants {
+public class BigDataColumn {
     
-    public static final String APP_NAME = "cloudex";
+    private String name;
     
+    private String type;
+
     /**
-     * The name of a cloud storage bucket key
+     * 
      */
-    public static final String CLOUD_STORAGE_BUCKET_KEY = "bucket";
-    
+    public BigDataColumn() {
+        super();
+    }
+
     /**
-     * The key for the cloud region or zone
+     * @param name - the column name
+     * @param type - the column type
      */
-    public static final String ZONE_ID_KEY = "zoneId";
-    
-    public static final String PRCESSORS_KEY = "processors"; 
-    
+    public BigDataColumn(String name, String type) {
+        super();
+        this.name = name;
+        this.type = type;
+    }
+
     /**
-     * Extension for plain text files
+     * @return the name
      */
-    public static final String DOT_TEXT = ".txt";
-    
-    public static final String UTF8 = "UTF-8";
-    
-    public static final String DOT_GZIP = ".gz";
-    
-    public static final String GZIP_CONTENT_TYPE = "application/x-gzip";
-    
-    public static final String BINARY_CONTENT_TYPE = "application/octet-stream";
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * @return the type
+     */
+    public String getType() {
+        return type;
+    }
+
+    /**
+     * @param type the type to set
+     */
+    public void setType(String type) {
+        this.type = type;
+    }
 
 }

@@ -33,7 +33,9 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Workload partition configurations
+ * Workload partition configurations. If the type of the partition is set to FUNCTION then
+ * a className or functionName is required, output is required is this case as well. If the type
+ * is set to ITEMS then className and output are not required
  * 
  * @author Omer Dawelbeit (omerio)
  *
