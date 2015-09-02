@@ -23,6 +23,8 @@ package io.cloudex.framework.cloud.entities;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * Represents a table in a Big Data cloud provider service
  * 
@@ -75,6 +77,7 @@ public class BigDataTable {
     }
 
     /**
+     * Set the fully qualified big data table name
      * @param name the name to set
      */
     public void setName(String name) {
@@ -96,5 +99,15 @@ public class BigDataTable {
     }
     
     
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+            .append("name", name)
+            .append("columns", columns)
+            .toString();
+    }
 
 }

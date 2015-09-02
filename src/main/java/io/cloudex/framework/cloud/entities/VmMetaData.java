@@ -262,7 +262,7 @@ public class VmMetaData {
      * @param key
      * @param value
      */
-    public VmMetaData addValue1(String key, String value) {
+    public VmMetaData addValue(String key, String value) {
         this.attributes.put(key, value);
         return this;
     }
