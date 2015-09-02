@@ -32,7 +32,7 @@
             <artifactId>cloudex-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
-                <dependency>
+        <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-storage</artifactId>
             <version>${google.storage.api.version}</version>

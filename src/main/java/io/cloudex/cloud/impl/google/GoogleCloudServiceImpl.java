@@ -602,53 +602,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         return object;
     }
 
-    /**
-     * Convert the provided file to a format that can be imported to the Cloud Database
-     * 
-     * @param filename
-     * @return
-     * @throws IOException 
-     */
-    //	@Override
-    //	public String prepareForCloudDatabaseImport(String filename) throws IOException {
-    //		return this.prepareForCloudDatabaseImport(filename, null);
-    //	}
-
-    /**
-     * Convert the provided file to a format that can be imported to the Cloud Database
-     * 
-     * @param filename
-     * @return
-     * @throws IOException 
-     */
-    //	@Override
-    //	public String prepareForCloudDatabaseImport(String filename, final TermCounter counter) throws IOException {
-    //		/*String outFilename = new StringBuilder(FileUtils.TEMP_FOLDER)
-    //			.append(File.separator).append("out_").append(filename).toString();*/
-    //		NTripleGzipProcessor processor = new NTripleGzipProcessor(filename);
-    //
-    //		String outFilename = processor.process(new NTripleGzipCallback() {
-    //
-    //			@Override
-    //			public String process(String [] terms) {
-    //
-    //				if(counter != null) {
-    //					counter.count(terms);
-    //				}
-    //
-    //				for(int i = 0; i < terms.length; i++) {
-    //					// bigquery requires data to be properly escaped
-    //					terms[i] = StringEscapeUtils.escapeCsv(terms[i]);
-    //				}
-    //
-    //				return StringUtils.join(terms, ',');
-    //			}
-    //
-    //		});
-    //
-    //		return outFilename;
-    //	}
-
+    
     //------------------------------------------------- Compute -------------------------------
 
     /**
@@ -1209,24 +1163,6 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         return completedIds;
 
     }
-
-    /**
-     * Stream local N triple files into big query
-     * @param files
-     * @param table
-     * @throws IOException
-     */
-    //	@Override
-    //	public void streamLocalFilesIntoBigData(List<String> files, String table) throws IOException {
-    //		Set<Triple> triples = null;
-    //		for(String file: files) {
-    //			triples = TripleUtils.loadNTriples(file);
-    //			
-    //			if(!triples.isEmpty()) {
-    //				this.streamTriplesIntoBigData(triples, table);
-    //			}
-    //		}
-    //	}
 
     /**
      * Stream triple data into big query
