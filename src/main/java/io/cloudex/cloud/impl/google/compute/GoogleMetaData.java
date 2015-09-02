@@ -81,26 +81,4 @@ public class GoogleMetaData {
     public static final String RATE_LIMIT_EXCEEDED = "rateLimitExceeded";
     public static final String QUOTA_EXCEEDED = "quotaExceeded";
 
-
-    /**
-     * BigQuery table schema
-     */
-    public static final TableSchema SCHEMA = new TableSchema();
-
-    /* FIXME move inside Google service
-     * static {
-
-		List<TableFieldSchema> fields = new ArrayList<>();
-		TableFieldSchema field;
-		for(TermType term: TermType.values()) {
-			field = new TableFieldSchema();
-			field.setName(term.term());
-			field.setType(GoogleMetaData.TYPE_STRING);
-			fields.add(field);
-		}
-		SCHEMA.setFields(fields);
-	}
-     */
-
-
 }
