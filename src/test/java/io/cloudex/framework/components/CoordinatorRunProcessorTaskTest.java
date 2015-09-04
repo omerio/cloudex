@@ -39,6 +39,8 @@ import io.cloudex.framework.types.ProcessorStatus;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,6 +105,113 @@ public class CoordinatorRunProcessorTaskTest {
         assertNotNull(partitions);
 
         assertEquals(5, partitions.size());
+    }
+    
+    /**
+     * Test method for {@link io.cloudex.framework.components.Coordinator#run()}.
+     * @throws IOException 
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskPartitionFunctionNoPartitionItem() throws IOException {
+
+        Job job = getJob("CoordinatorTest4.json");
+        final CloudService service =  getCloudService(true, 1000, job.getVmConfig(), 5, 
+                false, false, new HashSet<String>()).getMockInstance();
+        
+        Coordinator coordinator = new Coordinator(job, service);        
+        Context context = populateContext(coordinator);
+        coordinator.run();
+        assertEquals(5, coordinator.getProcessors().size());
+
+        List<Partition> partitions = (List<Partition>) context.get("filePartitions");
+        assertNotNull(partitions);
+
+        assertEquals(5, partitions.size());
+        
+    }
+    
+    /**
+     * Test method for {@link io.cloudex.framework.components.Coordinator#run()}.
+     * @throws IOException 
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskPartitionItemsNoTaskInput() throws IOException {
+
+        Job job = getJob("CoordinatorTest5.json");
+        
+        final Set<String> processors = Sets.newHashSet("processor1", "processor2", "processor3", "processor4");
+        
+        final MockUp<CloudService> mockup = new MockUp<CloudService>() {
+
+            @Mock(invocations = 1)
+            public VmMetaData init() throws IOException { 
+                return metaData; 
+            }
+
+            @Mock(invocations = 1)
+            public int getMaximumMetaDataSize() { 
+                return 10000; 
+            }
+
+            @Mock(invocations = 0)
+            public boolean startInstance(List<VmConfig> configs, boolean block) throws IOException {
+                return true;
+            }
+
+            @Mock(invocations = 8)
+            public VmMetaData getMetaData(String instanceId, String zoneId) throws IOException {
+                System.out.println("Getting metadata for instance: " + instanceId);
+                assertNotNull(instanceId);
+                //ApiUtils.block(1);
+                VmMetaData metaData = new VmMetaData();
+                metaData.setProcessorStatus(ProcessorStatus.READY);
+
+                return metaData;
+            }
+            
+            @Mock(invocations = 0)
+            public void updateMetadata(VmMetaData metaData) throws IOException { 
+            }
+            
+            @Mock(invocations = 4)
+            public void updateMetadata(VmMetaData metaData, 
+                    String zoneId, String instanceId, boolean block) throws IOException {
+                assertNotNull(zoneId);
+                assertTrue(processors.contains(instanceId));
+                assertTrue(block);
+                assertNotNull(metaData);
+                assertNotNull(metaData.getTaskClass());
+                assertTrue(metaData.getUserMetaData().isEmpty());
+            }
+
+            @Mock(minInvocations = 1)
+            public int getApiRecheckDelay() { 
+                return 0; 
+            }
+            
+            @Mock(invocations = 0)
+            public StorageObject uploadFileToCloudStorage(String filename, String bucket) throws IOException {
+                return null;
+            }
+
+            @Mock(invocations = 0)
+            public void shutdownInstance(List<VmConfig> configs) throws IOException {
+            }
+
+        };
+        final CloudService service =  mockup.getMockInstance();
+        
+        Coordinator coordinator = new Coordinator(job, service);   
+        coordinator.getProcessors().addAll(processors);
+        Context context = populateContext(coordinator);
+        Collection<String> processorsLive = (Collection<String>) context.resolveValue("#processors");
+        assertNotNull(processorsLive);
+        assertEquals(4, processorsLive.size());
+        coordinator.run();
+        assertEquals(4, coordinator.getProcessors().size());
+        
     }
 
     /**
@@ -304,6 +413,10 @@ public class CoordinatorRunProcessorTaskTest {
 
                     for(String key: metaDataKeys) {
                         assertNotNull("Missing key in metadata: " + key, userData.get(key));
+                    }
+                    
+                    for(String key: userData.keySet()) {
+                        assertTrue("Key in metadata, but not in metaData keys to check " + key, metaDataKeys.contains(key));
                     }
                 }
             }

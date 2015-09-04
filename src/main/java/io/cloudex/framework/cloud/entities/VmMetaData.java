@@ -24,6 +24,7 @@ import io.cloudex.framework.types.ProcessorStatus;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -274,6 +275,18 @@ public class VmMetaData {
      */
     public VmMetaData addUserValue(String key, String value) {
         this.attributes.put(USER_PREFIX + key, value);
+        return this;
+    }
+    
+    /**
+     * Add a map of user values to the metadata, return this instance for chaining
+     * @param values - the values map
+     * @return this instance {@link VmMetaData}
+     */
+    public VmMetaData addUserValues(Map<String, String> values) {
+        for(Entry<String, String> entry: values.entrySet()) {
+            this.addUserValue(entry.getKey(), entry.getValue());
+        }
         return this;
     }
 

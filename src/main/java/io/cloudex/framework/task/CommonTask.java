@@ -48,6 +48,17 @@ public abstract class CommonTask implements Task {
         return this.output;
     }
 
+    /**
+     * Add a key/value to the output of this task. This is a delegate method for Map.put
+     * @param key - the key 
+     * @param value - the value
+     * @return the object that has been added
+     * @see java.util.Map#put(java.lang.Object, java.lang.Object)
+     */
+    public Object addOutput(String key, Object value) {
+        return output.put(key, value);
+    }
+
     /* (non-Javadoc)
      * @see io.cloudex.framework.Executable#setCloudService(io.cloudex.framework.cloud.CloudService)
      */

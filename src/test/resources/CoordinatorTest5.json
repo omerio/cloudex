@@ -1,0 +1,34 @@
+{
+    "id": "my-job",
+    "mode": "Serial",
+    "vmConfig": {
+        "zoneId": "somezone",
+        "imageId": "imagename",
+        "vmType": "n1-standard-1",
+        "networkId": "default",
+        "diskType": "SSD"
+    },
+    "data": {
+      "bucket":"testBucket",
+      "table":"mytable",
+      "schema": "myschemafile.txt",
+      "numberOfNodes": 5,
+      "maxFileSizePerNode": 10,
+      "newNodePercentage": 0.0
+    },
+    "tasks": [{
+      "id": "test-task",
+      "className": "some.package.SomeClass2",
+      "code": {
+        "location": "LOCAL"
+      },
+      "target": "PROCESSOR",
+      "partitioning": {
+        "type": "ITEMS",
+        "input": {
+          "items": "#processors"
+        }
+      },
+      "errorAction": "EXIT"
+    }]
+}

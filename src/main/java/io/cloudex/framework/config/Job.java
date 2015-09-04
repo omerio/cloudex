@@ -46,6 +46,8 @@ public class Job implements Serializable {
     private static final long serialVersionUID = 7460340670508024439L;
 
     private String id;
+    
+    private String description;
 
     @NotNull
     @Size(min = 1)
@@ -129,6 +131,20 @@ public class Job implements Serializable {
      */
     public void setTasks(List<TaskConfig> tasks) {
         this.tasks = tasks;
+    }
+
+    /**
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * @param description the description to set
+     */
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     /**

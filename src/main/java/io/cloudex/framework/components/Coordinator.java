@@ -267,61 +267,77 @@ public class Coordinator extends CommonExecutable {
         String bucket = (String) this.getJobDataValue(Constants.CLOUD_STORAGE_BUCKET_KEY);
         String zoneId = this.job.getVmConfig().getZoneId();
 
-        Map<String, String> processorInput = new HashMap<>(taskConfig.getInput());
-
-        
-        Entry<String, String> partitionItemEntry = null;
-        for(Entry<String, String> entry: processorInput.entrySet()) {
-            String value = entry.getValue();
-            if(value.equals(itemsKey)) {
-                partitionItemEntry = entry;
-                break;
-            }
-        }
-
-        if(partitionItemEntry == null) {
-            throw new IllegalArgumentException("expecting an input key/value for partition item in task " 
-                    + getTaskName(taskConfig));
-        }
-
-        String itemMetaDataKey = partitionItemEntry.getKey();
-
-        // remove the partition item key/value from the input mapping
-        processorInput.remove(itemMetaDataKey);
-
         List<String> idleProcessors = Lists.newArrayList(this.processors);
         List<String> busyProcessors = new ArrayList<>();
 
         List<VmConfig> vmsConfig = new ArrayList<>();
         long timestamp = (new Date()).getTime();
 
-        Collection<String> items = this.getPartitionItems(taskConfig, partitionConfig, itemsKey);
-
         int count = 0;
         int index = 0;
+        
         int metaDataMaxSize = cloudService.getMaximumMetaDataSize();
+        
+        Map<String, String> processorInput = new HashMap<>();
+        Entry<String, String> partitionItemEntry = null;
+
+        if(taskConfig.getInput() != null) {
+            processorInput.putAll(taskConfig.getInput());
+
+            for(Entry<String, String> entry: processorInput.entrySet()) {
+                String value = entry.getValue();
+                if(value.equals(itemsKey)) {
+                    partitionItemEntry = entry;
+                    break;
+                }
+            }
+        }
+        
+        // for some processor tasks we might not need to give them any thing from the partition item.
+        // for example if this task doesn't need any input
+        String itemMetaDataKey = null;
+
+        if(partitionItemEntry != null) {
+            //throw new IllegalArgumentException("expecting an input key/value for partition item in task " 
+              //      + getTaskName(taskConfig));           
+            itemMetaDataKey = partitionItemEntry.getKey();
+            // remove the partition item key/value from the input mapping
+            processorInput.remove(itemMetaDataKey);
+
+        }
+        
+        // get all the resolved task inputs
+        Map<String, String> resolvedInputs = new HashMap<>();
+        for(Entry<String, String> entry: processorInput.entrySet()) {
+            String value = (String) this.context.resolveValue(entry.getValue());
+            resolvedInputs.put(entry.getKey(), value);
+        }
+        
+        Collection<String> items = this.getPartitionItems(taskConfig, partitionConfig, itemsKey);
 
         for(String item: items) {
 
             // add the metadata
             VmMetaData metaData = new VmMetaData();
             metaData.setTaskClass(taskConfig.getClassName());
+            
+            // add the task inputs
+            metaData.addUserValues(resolvedInputs);
+            
+            // do we need to inject the task with the item?
+            if(itemMetaDataKey != null) {
+                
+                // add the item, first check if it's too long
+                if(item.length() > metaDataMaxSize) {
 
-            for(Entry<String, String> entry: processorInput.entrySet()) {
-                String value = (String) this.context.resolveValue(entry.getValue());
-                metaData.addUserValue(entry.getKey(), value);
-            }
+                    this.saveMetaDataItemToFile(metaData, item, itemMetaDataKey, bucket, index, timestamp);
 
-            // add the item, first check if it's too long
-            if(item.length() > metaDataMaxSize) {
+                    index++;
 
-                this.saveMetaDataItemToFile(metaData, item, itemMetaDataKey, bucket, index, timestamp);
+                } else {
 
-                index++;
-
-            } else {
-
-                metaData.addUserValue(itemMetaDataKey, item);
+                    metaData.addUserValue(itemMetaDataKey, item);
+                }
             }
 
             // re-program existing processors
