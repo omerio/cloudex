@@ -30,12 +30,12 @@ import io.cloudex.framework.types.ProcessorStatus;
 
 import java.io.IOException;
 
+import com.google.common.base.Stopwatch;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.google.common.base.Stopwatch;
 
 
 /**
@@ -100,9 +100,6 @@ public class Processor extends CommonExecutable {
                 // only process tasks if the status is empty
                 if(StringUtils.isBlank(status)) {
 
-                    stopwatch.reset();
-                    stopwatch.start();
-
                     // set status to BUSY
                     metaData.setProcessorStatus(ProcessorStatus.BUSY);
                     cloudService.updateMetadata(metaData);
@@ -110,7 +107,13 @@ public class Processor extends CommonExecutable {
                     // run the task
                     Task task = taskFactory.getTask(metaData, cloudService);
                     if(task != null) {
+                        stopwatch.start();
+                        log.info("Starting task: " + task);
+                        
                         task.run();
+                        
+                        log.info("TIMER# Task " + task + " completed in: " + stopwatch);
+                        stopwatch.reset();
 
                     } else {
                         //no task is set, just set status to ready and wait for tasks
@@ -123,9 +126,6 @@ public class Processor extends CommonExecutable {
                     metaData.setProcessorStatus(ProcessorStatus.READY);
 
                     cloudService.updateMetadata(metaData);
-
-                    log.info("TIMER# Task " + task + " completed in: " + stopwatch);
-                    stopwatch.reset();
 
                 } else {
                     log.info("will continue waiting for instructions as status is currently: " + status);
