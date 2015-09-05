@@ -108,7 +108,7 @@ public class Processor extends CommonExecutable {
                     Task task = taskFactory.getTask(metaData, cloudService);
                     if(task != null) {
                         stopwatch.start();
-                        log.info("Starting task: " + task);
+                        log.info("Starting processor task: " + task);
                         
                         task.run();
                         

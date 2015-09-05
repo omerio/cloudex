@@ -167,7 +167,7 @@ public class Coordinator extends CommonExecutable {
                 if(TargetType.PROCESSOR.equals(taskConfig.getTarget())) {
                     
                     taskName = this.getTaskName(taskConfig);
-                    log.info("Running processor task: " + taskName);
+                    log.info("Starting processor task: " + taskName);
                     
                     this.runProcessorTask(taskConfig);
 
@@ -176,7 +176,7 @@ public class Coordinator extends CommonExecutable {
                     Task task = taskFactory.getTask(taskConfig, context, getCloudService());
                     taskName = this.getTaskName(task);
                     
-                    log.info("Running coordinator task: " + taskName);
+                    log.info("Starting coordinator task: " + taskName);
                     
                     // run the task
                     if(ErrorAction.CONTINUE.equals(taskConfig.getErrorAction())) {
@@ -192,7 +192,7 @@ public class Coordinator extends CommonExecutable {
                 }
 
                 stopwatch1.stop();
-                log.info("TIMER: Task " + taskName + " completed in " + stopwatch1);
+                log.info("TIMER# Task " + taskName + " completed in " + stopwatch1);
 
             }
 
