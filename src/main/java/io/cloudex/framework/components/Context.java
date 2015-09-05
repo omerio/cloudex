@@ -29,6 +29,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * Task execution context, responsible for resolving values.
@@ -249,6 +250,16 @@ public class Context {
         return context.entrySet();
     }
 
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+            .append("context", context)
+            .append("readOnly", readOnly)
+            .toString();
+    }
 
 
 }

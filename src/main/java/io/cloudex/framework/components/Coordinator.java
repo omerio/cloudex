@@ -212,7 +212,9 @@ public class Coordinator extends CommonExecutable {
                 this.shutdownProcessors();
             }
         }
-
+        
+        log.trace("Coordinator's context: " + this.context);
+        
         stopwatch.stop();
         log.info("TIMER# Job completed in " + stopwatch);
 
