@@ -29,6 +29,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * @author Omer Dawelbeit (omerio)
@@ -187,12 +188,14 @@ public class VmConfig implements Serializable {
         this.diskType = diskType;
     }
 
-    /*
-     * (non-Javadoc)
+    /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
-        return ReflectionToStringBuilder.toString(this);
+        ReflectionToStringBuilder builder = new ReflectionToStringBuilder(this);
+        builder.setAppendTransients(true);
+        return builder.toString();
     }
     
     /**

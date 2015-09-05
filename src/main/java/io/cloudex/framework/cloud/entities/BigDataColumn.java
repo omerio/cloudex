@@ -20,6 +20,8 @@
 
 package io.cloudex.framework.cloud.entities;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * Represents a column in a Big Data table
  * @author Omer Dawelbeit (omerio)
@@ -74,6 +76,17 @@ public class BigDataColumn {
      */
     public void setType(String type) {
         this.type = type;
+    }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+            .append("name", name)
+            .append("type", type)
+            .toString();
     }
 
 }

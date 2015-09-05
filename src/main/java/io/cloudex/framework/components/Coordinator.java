@@ -214,7 +214,7 @@ public class Coordinator extends CommonExecutable {
         }
 
         stopwatch.stop();
-        log.info("TIMER: Job completed in " + stopwatch);
+        log.info("TIMER# Job completed in " + stopwatch);
 
     }
     

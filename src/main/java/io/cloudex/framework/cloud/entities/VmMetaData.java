@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -331,6 +332,17 @@ public class VmMetaData {
         followUp.setFingerprint(this.getFingerprint());
         
         return followUp;
+    }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+            .append("fingerprint", fingerprint)
+            .append("attributes", attributes)
+            .toString();
     }
 
 }
