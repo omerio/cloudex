@@ -222,5 +222,21 @@ public interface CloudService {
      * @return API recheck delay
      */
     public int getApiRecheckDelay();
+    
+    /**
+     * Usually this cloud service is used in a cloud VM environment. If remote is set to true, then
+     * it's assumed that this service is not run on a VM environment. Useful for local testing of cloud
+     * services
+     * @param remote - true if this instance is not running on a VM
+     */
+    public void setRemote(boolean remote);
+    
+    /**
+     * The authentication provider used by this instance
+     * @param <T> the class of the authentication object returned by the provider
+     * @param provider the authentication provider to use
+     * 
+     */
+    public <T> void setAuthenticationProvider(AuthenticationProvider<T> provider);
 
 }
