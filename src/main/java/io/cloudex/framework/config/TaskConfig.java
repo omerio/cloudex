@@ -64,6 +64,12 @@ public class TaskConfig implements Serializable {
     private CodeConfig code;
     
     private PartitionConfig partitioning;
+    
+    /**
+     * Provide the ability to run individual tasks on 
+     * different VM configurations
+     */
+    private VmConfig vmConfig;
 
     /**
      * @return the id
@@ -193,12 +199,26 @@ public class TaskConfig implements Serializable {
     }
 
     /**
+     * @return the vmConfig
+     */
+    public VmConfig getVmConfig() {
+        return vmConfig;
+    }
+
+    /**
+     * @param vmConfig the vmConfig to set
+     */
+    public void setVmConfig(VmConfig vmConfig) {
+        this.vmConfig = vmConfig;
+    }
+
+    /**
      * check if this instance is valid
      * @return true if valid
      */
     public boolean valid() {
         return ObjectUtils.isValid(TaskConfig.class, this)  
-                && (TargetType.COORDINATOR.equals(this.target) 
+                && ((TargetType.COORDINATOR.equals(this.target) && (this.vmConfig == null))
                         || (TargetType.PROCESSOR.equals(this.target) && (this.partitioning != null) 
                                 && this.partitioning.valid() && (this.output == null)));
     }
@@ -220,6 +240,9 @@ public class TaskConfig implements Serializable {
             if(this.output != null) {
                 messages.add("processor tasks should not have any output");
             }
+            
+        } else if(TargetType.COORDINATOR.equals(this.target) && (this.vmConfig != null)) {
+            messages.add("vm config is not expected for coordinators");
         }
 
         if(this.partitioning != null) {

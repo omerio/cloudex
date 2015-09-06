@@ -107,6 +107,31 @@ public class CoordinatorRunProcessorTaskTest {
         assertEquals(5, partitions.size());
     }
     
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskVmConfig() throws IOException {
+
+        Job job = getJob("CoordinatorTest1.json");
+        VmConfig taskVmConfig = new VmConfig();
+        taskVmConfig.setDiskType("Normal");
+        taskVmConfig.setVmType("n1-standard-8");
+        job.getTasks().get(0).setVmConfig(taskVmConfig);
+        
+        VmConfig validatedConfig = job.getVmConfig().merge(taskVmConfig);
+        
+        final CloudService service = getCloudService(validatedConfig, 5, true).getMockInstance();
+        Coordinator coordinator = new Coordinator(job, service);   
+        coordinator.getProcessors().addAll(Sets.newHashSet("processor1", "processor2", "processor3", "processor4"));
+        Context context = populateContext(coordinator);
+        coordinator.run();
+        assertEquals(4, coordinator.getProcessors().size());
+
+        List<Partition> partitions = (List<Partition>) context.get("filePartitions");
+        assertNotNull(partitions);
+
+        assertEquals(5, partitions.size());
+    }
+    
     /**
      * Test method for {@link io.cloudex.framework.components.Coordinator#run()}.
      * @throws IOException 
@@ -539,7 +564,11 @@ public class CoordinatorRunProcessorTaskTest {
     }
 
     private MockUp<CloudService> getCloudService(VmConfig config, int numOfProcessors) {
-        return getCloudService(true, 1000, config, numOfProcessors, false, false, null);
+        return getCloudService(config, numOfProcessors, false);
+    }
+    
+    private MockUp<CloudService> getCloudService(VmConfig config, int numOfProcessors, boolean shutdown) {
+        return getCloudService(true, 1000, config, numOfProcessors, shutdown, false, null);
     }
 
     private Job getJob(String filename) throws FileNotFoundException, IOException {

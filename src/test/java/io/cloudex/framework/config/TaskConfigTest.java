@@ -98,6 +98,30 @@ public class TaskConfigTest {
         assertEquals("processor tasks should not have any output", config.getValidationErrors().get(0));
     }
     
+    @Test
+    public void testValidVmConfig() {
+        TaskConfig config = setup(TargetType.PROCESSOR);
+        VmConfig vmConfig = new VmConfig();
+        
+        vmConfig.setDiskType("ssd-disk");
+        config.setVmConfig(vmConfig);
+        assertTrue(config.valid());
+        assertEquals(0, config.getValidationErrors().size());
+
+    }
+    
+    @Test
+    public void testInvalidVmConfig() {
+        TaskConfig config = setup(TargetType.COORDINATOR);
+        VmConfig vmConfig = new VmConfig();
+        
+        vmConfig.setDiskType("ssd-disk");
+        config.setVmConfig(vmConfig);
+        assertFalse(config.valid());
+        assertEquals(1, config.getValidationErrors().size());
+        assertEquals("vm config is not expected for coordinators", config.getValidationErrors().get(0));
+    }
+    
     /**
      * 
      * @param target

@@ -28,8 +28,8 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * @author Omer Dawelbeit (omerio)
@@ -211,6 +211,43 @@ public class VmConfig implements Serializable {
         vmConfig.setVmType(this.vmType);
         vmConfig.setZoneId(this.zoneId);
         return vmConfig;
+    }
+    
+    /**
+     * Returns a merge of a copy of this instance with some of the fields 
+     * overwritten by the non null value in config 
+     * @param config - the config to overwrite the returned copy
+     * @return a merged copy of this instance with the provided config
+     */
+    public VmConfig merge(VmConfig config) {
+        
+        VmConfig vmConfig = this.copy();
+        
+        if(StringUtils.isNotBlank(config.getDiskType())) {
+            vmConfig.setDiskType(config.getDiskType());
+        }
+        
+        if(StringUtils.isNotBlank(config.getImageId())) {
+            vmConfig.setImageId(config.getImageId());
+        }
+        
+        if(StringUtils.isNotBlank(config.getNetworkId())) {
+            vmConfig.setNetworkId(config.getNetworkId());
+        }
+        
+        if(StringUtils.isNotBlank(config.getStartupScript())) {
+            vmConfig.setStartupScript(config.getStartupScript());
+        }
+        
+        if(StringUtils.isNotBlank(config.getVmType())) {
+            vmConfig.setVmType(config.getVmType());
+        }
+        
+        if(StringUtils.isNotBlank(config.getZoneId())) {
+            vmConfig.setZoneId(config.getZoneId());
+        }
+        return vmConfig;
+        
     }
     
     /**

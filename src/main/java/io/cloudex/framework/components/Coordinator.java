@@ -64,8 +64,12 @@ import org.apache.commons.logging.LogFactory;
 
 
 /**
- * The CloudEx Coordinator Component
+ * The CloudEx Coordinator Component. Processor tasks can be run on VM configuration that is 
+ * different from the ones used for the job. These VMs will be shutdown as soon as the task
+ * is completed and won't be added to the VM pool for reuse.
+ * 
  * TODO add processor vm object with start/end times and vm config (stats + config)
+ * 
  * @author Omer Dawelbeit (omerio)
  *
  */
@@ -256,6 +260,8 @@ public class Coordinator extends CommonExecutable {
         final CloudService cloudService = this.getCloudService();
         
         VmConfig vmConfig = this.job.getVmConfig();
+        // do we need to start custom vms for this task?
+        boolean taskUsesCustomVms = (taskConfig.getVmConfig() != null);
         // check the parition function
         PartitionConfig partitionConfig = taskConfig.getPartitioning();
         Map<String, String> partitionInput = partitionConfig.getInput();
@@ -273,7 +279,16 @@ public class Coordinator extends CommonExecutable {
         String bucket = (String) this.getJobDataValue(Constants.CLOUD_STORAGE_BUCKET_KEY);
         String zoneId = this.job.getVmConfig().getZoneId();
 
-        List<String> idleProcessors = Lists.newArrayList(this.processors);
+        List<String> idleProcessors;
+        
+        if(taskUsesCustomVms) {
+            idleProcessors = Lists.newArrayList();
+            log.debug("Task: " + this.getTaskName(taskConfig) + " uses custom vm config: " + taskConfig.getVmConfig());
+            
+        } else {
+            idleProcessors = Lists.newArrayList(this.processors);
+        }
+        
         List<String> busyProcessors = new ArrayList<>();
 
         List<VmConfig> vmsConfig = new ArrayList<>();
@@ -363,7 +378,16 @@ public class Coordinator extends CommonExecutable {
                 String instanceId = VmMetaData.CLOUDEX_VM_PREFIX + (timestamp + count);
                 busyProcessors.add(instanceId);
 
-                VmConfig conf = vmConfig.copy();
+                VmConfig conf;
+                
+                if(taskUsesCustomVms) {
+                    // if the task uses a custom vm then merge the config with the job vm config
+                    conf = vmConfig.merge(taskConfig.getVmConfig());
+                    
+                } else {
+                    conf = vmConfig.copy();
+                }
+                
                 conf.setInstanceId(instanceId);
                 conf.setMetaData(metaData);
 
@@ -375,7 +399,9 @@ public class Coordinator extends CommonExecutable {
 
         }
         
-        this.processors.addAll(busyProcessors);
+        if(!taskUsesCustomVms) {
+            this.processors.addAll(busyProcessors);
+        }
 
         if(!vmsConfig.isEmpty()) {
             boolean success = cloudService.startInstance(vmsConfig, true);
@@ -393,6 +419,12 @@ public class Coordinator extends CommonExecutable {
             throw processorException;
         }
 
+        if(taskUsesCustomVms) {
+            // shutdown the custom vms
+            log.debug("Shutting down custom vms: " + vmsConfig + " for task: " + this.getTaskName(taskConfig));
+            this.getCloudService().shutdownInstance(vmsConfig);
+        }
+        
         log.info("Successfully completed processor task " + this.getTaskName(taskConfig));
         log.info("Number of idle processors: " + this.processors.size() + ", instance Ids: " + this.processors);
 
