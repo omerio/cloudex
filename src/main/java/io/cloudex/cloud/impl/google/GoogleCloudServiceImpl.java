@@ -18,7 +18,6 @@
  */
 package io.cloudex.cloud.impl.google;
 
-import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.ACCESS_TOKEN;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.ATTRIBUTES;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.ATTRIBUTES_PATH;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.CLOUD_STORAGE_PREFIX;
@@ -29,12 +28,10 @@ import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.DEFAULT;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.DISK_TYPES;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.DONE;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.EMAIL;
-import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.EXPIRES_IN;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.EXT_NAT;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.HOSTNAME;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.INSTANCE_ALL_PATH;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.MACHINE_TYPES;
-import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.METADATA_SERVER_URL;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.MIGRATE;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.NETWORK;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.NOT_FOUND;
@@ -44,7 +41,6 @@ import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.PROJECT_ID_PAT
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.RESOURCE_BASE_URL;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.SCOPES;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.SERVICE_ACCOUNTS;
-import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.TOKEN_PATH;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.WAIT_FOR_CHANGE;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.WRITE_APPEND;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.ZONE;
@@ -56,7 +52,9 @@ import io.cloudex.cloud.impl.google.compute.InstanceStatus;
 import io.cloudex.cloud.impl.google.storage.DownloadProgressListener;
 import io.cloudex.cloud.impl.google.storage.UploadProgressListener;
 import io.cloudex.framework.cloud.api.ApiUtils;
+import io.cloudex.framework.cloud.api.AuthenticationProvider;
 import io.cloudex.framework.cloud.api.Callback;
+import io.cloudex.framework.cloud.api.CloudService;
 import io.cloudex.framework.cloud.api.FutureTask;
 import io.cloudex.framework.cloud.entities.BigDataColumn;
 import io.cloudex.framework.cloud.entities.BigDataTable;
@@ -65,23 +63,17 @@ import io.cloudex.framework.cloud.entities.VmMetaData;
 import io.cloudex.framework.config.VmConfig;
 import io.cloudex.framework.utils.Constants;
 import io.cloudex.framework.utils.FileUtils;
-import io.cloudex.framework.utils.ObjectUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,10 +85,10 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
@@ -181,12 +173,6 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
     private Bigquery bigquery;
 
-    // service account access token retrieved from the metadata server
-    private String accessToken;
-
-    // the expiry time of the token
-    private Date tokenExpire;
-
     private String projectId;
 
     private String zone;
@@ -196,6 +182,11 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     private String serviceAccount;
 
     private List<String> scopes;
+    
+    private boolean remote;
+    
+    @SuppressWarnings("rawtypes")
+    private AuthenticationProvider authenticationProvider;
 
     /**
      * Perform initialization before
@@ -205,34 +196,59 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public VmMetaData init() throws IOException {
-        Map<String, Object> attributes;
-        this.projectId = getMetaData(PROJECT_ID_PATH);
-        Map<String, Object> metaData = ObjectUtils.jsonToMap(getMetaData(INSTANCE_ALL_PATH));
-        attributes = (Map<String, Object>) metaData.get(ATTRIBUTES);
-
-        // strangely zone looks like this: "projects/315344313954/zones/us-central1-a"
-        this.zone = (String) metaData.get(ZONE);
-        this.zone = StringUtils.substringAfterLast(this.zone, "/");
-
-        // the name isn't returned!, but the hostname looks like this:
-        // "ecarf-evm-1.c.ecarf-1000.internal"
-        this.instanceId = (String) metaData.get(HOSTNAME);
-        this.instanceId = StringUtils.substringBefore(this.instanceId, ".");
-
-        // get the default service account
-        Map<String, Object> serviceAccountConfig = ((Map) ((Map) metaData.get(SERVICE_ACCOUNTS)).get(DEFAULT));
-        this.serviceAccount = (String) serviceAccountConfig.get(EMAIL);
-        this.scopes = (List) serviceAccountConfig.get(SCOPES);
-        // add the datastore scope as well
-        this.scopes.add(DATASTORE_SCOPE);
-
-        this.authorise();
+        
+        // can't do anything without an authentication provider
+        Validate.notNull(this.authenticationProvider);
+        
+        Map<String, Object> attributes = null;
+        String fingerprint = null;
+        
         this.getHttpTransport();
-        this.getCompute();
-        this.getStorage();
+        
+        if(this.remote) {
+            // if not running on a vm on the cloud environment, then 
+            // these values need to be set externally
+            Validate.notNull(this.zone);
+            Validate.notNull(this.projectId);
+            Validate.notNull(this.instanceId);
+            Validate.notNull(this.scopes);
+            
+            Credential credential = (Credential) this.authenticationProvider.authorize();
+            
+            this.getCompute(credential);
+            this.getStorage(credential);
+            this.getBigquery(credential);
+            
+        } else {
+            this.projectId = GoogleMetaData.getMetaData(PROJECT_ID_PATH);
+            Map<String, Object> metaData = GoogleMetaData.getMetaDataAsMap(INSTANCE_ALL_PATH);
+            attributes = (Map<String, Object>) metaData.get(ATTRIBUTES);
 
-        Instance instance = this.getInstance(instanceId, zone);
-        String fingerprint = instance.getMetadata().getFingerprint();
+            // strangely zone looks like this: "projects/315344313954/zones/us-central1-a"
+            this.zone = (String) metaData.get(ZONE);
+            this.zone = StringUtils.substringAfterLast(this.zone, "/");
+
+            // the name isn't returned!, but the hostname looks like this:
+            // "ecarf-evm-1.c.ecarf-1000.internal"
+            this.instanceId = (String) metaData.get(HOSTNAME);
+            this.instanceId = StringUtils.substringBefore(this.instanceId, ".");
+
+            // get the default service account
+            Map<String, Object> serviceAccountConfig = ((Map) ((Map) metaData.get(SERVICE_ACCOUNTS)).get(DEFAULT));
+            this.serviceAccount = (String) serviceAccountConfig.get(EMAIL);
+            this.scopes = (List) serviceAccountConfig.get(SCOPES);
+            // add the datastore scope as well
+            this.scopes.add(DATASTORE_SCOPE);
+
+            // no need for this call right now
+            //this.authorise();
+            this.getCompute();
+            this.getStorage();
+            this.getBigquery();
+
+            Instance instance = this.getInstance(instanceId, zone);
+            fingerprint = instance.getMetadata().getFingerprint();
+        }
 
         log.debug("Successfully initialized Google Cloud Service: " + this);
         return new VmMetaData(attributes, fingerprint);
@@ -240,68 +256,6 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     }
 
 
-    /**
-     * Call the metadata server, this returns details for the current instance not for
-     * different instances. In order to retrieve the meta data of different instances
-     * we just use the compute api, see getInstance
-     * @param path
-     * @return
-     * @throws IOException
-     */
-    protected String getMetaData(String path) throws IOException {
-        log.debug("Retrieving metadata from server, path: " + path);
-        URL metadata = new URL(METADATA_SERVER_URL + path);
-        HttpURLConnection con = (HttpURLConnection) metadata.openConnection();
-
-        // optional default is GET
-        //con.setRequestMethod("GET");
-
-        //add request header
-        con.setRequestProperty("Metadata-Flavor", "Google");
-
-        int responseCode = con.getResponseCode();
-
-        StringBuilder response = new StringBuilder();
-
-        if(responseCode == 200) {
-            try(BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-            }
-        } else {
-            String msg = "Metadata server responded with status code: " + responseCode;
-            log.error(msg);
-            throw new IOException(msg);
-        }
-        log.debug("Successfully retrieved metadata from server");
-
-        return response.toString();
-    }
-
-    /**
-     * Retrieves a service account access token from the metadata server, the response has the format
-     * {
-		  "access_token":"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_QtAS08i85nHq39HE3C2LTrCARA",
-		  "expires_in":3599,
-		  "token_type":"Bearer"
-		}
-     * @throws IOException 
-     * @see https://developers.google.com/compute/docs/authentication
-     */
-    protected void authorise() throws IOException {
-
-        log.debug("Refreshing OAuth token from metadata server");
-        Map<String, Object> token = ObjectUtils.jsonToMap(getMetaData(TOKEN_PATH));
-        this.accessToken = (String) token.get(ACCESS_TOKEN);
-
-        Double expiresIn = (Double) token.get(EXPIRES_IN);
-        this.tokenExpire = DateUtils.addSeconds(new Date(), expiresIn.intValue());
-
-        log.debug("Successfully refreshed OAuth token from metadata server");
-
-    }
 
     /**
      * Create a new instance of the HTTP transport
@@ -324,15 +278,29 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
     /**
      * Get the token and also check if it's expired then request a new one
+     * Note: this is only relevant if remote = false
      * @return
      * @throws IOException
      */
     protected String getOAuthToken() throws IOException {
-
-        if((this.tokenExpire == null) || (new Date()).after(this.tokenExpire)) {
-            this.authorise();
+        
+        String token = null;
+        
+        if(!remote) {
+            token = (String) this.authenticationProvider.authorize();
         }
-        return this.accessToken;
+        
+        return token;
+    }
+    
+    /**
+     * Create a compute API client instance
+     * @return
+     * @throws IOException 
+     * @throws GeneralSecurityException 
+     */
+    protected Compute getCompute() throws IOException {
+        return this.getCompute(null);
     }
 
     /**
@@ -341,12 +309,22 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException 
      * @throws GeneralSecurityException 
      */
-    protected Compute getCompute() throws IOException {
+    protected Compute getCompute(Credential credential) throws IOException {
         if(this.compute == null) {
-            this.compute = new Compute.Builder(getHttpTransport(), JSON_FACTORY, null)
-            .setApplicationName(Constants.APP_NAME).build();
+            this.compute = new Compute.Builder(getHttpTransport(), JSON_FACTORY, credential)
+                .setApplicationName(Constants.APP_NAME).build();
         }
         return this.compute;
+    }
+    
+    /**
+     * Create a bigquery API client instance
+     * @return
+     * @throws IOException 
+     * @throws GeneralSecurityException 
+     */
+    protected Bigquery getBigquery() throws IOException {
+        return this.getBigquery(null);
     }
 
     /**
@@ -355,10 +333,10 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException 
      * @throws GeneralSecurityException 
      */
-    protected Bigquery getBigquery() throws IOException {
+    protected Bigquery getBigquery(Credential credential) throws IOException {
         if(this.bigquery == null) {
-            this.bigquery = new Bigquery.Builder(getHttpTransport(), JSON_FACTORY, null)
-            .setApplicationName(Constants.APP_NAME).build();
+            this.bigquery = new Bigquery.Builder(getHttpTransport(), JSON_FACTORY, credential)
+                .setApplicationName(Constants.APP_NAME).build();
         }
         return this.bigquery;
     }
@@ -370,13 +348,19 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws GeneralSecurityException 
      */
     protected Storage getStorage() throws IOException {
+        return this.getStorage(null);
+    }
+    
+    /**
+     * Create a storage API client instance
+     * @return
+     * @throws IOException 
+     * @throws GeneralSecurityException 
+     */
+    protected Storage getStorage(Credential credential) throws IOException {
         if(this.storage == null) {
-            this.storage = new  Storage.Builder(getHttpTransport(), JSON_FACTORY, null/*, new HttpRequestInitializer() {
-				public void initialize(HttpRequest request) {
-					request.setUnsuccessfulResponseHandler(new RedirectHandler());
-				}
-			}*/)
-            .setApplicationName(Constants.APP_NAME).build();
+            this.storage = new  Storage.Builder(getHttpTransport(), JSON_FACTORY, credential)
+                .setApplicationName(Constants.APP_NAME).build();
         }
         return this.storage;
     }
@@ -628,9 +612,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      */
     @Override
     public VmMetaData getMetaData(boolean waitForChange) throws IOException {
-        String metaData = this.getMetaData(ATTRIBUTES_PATH + (waitForChange ? WAIT_FOR_CHANGE : ""));
 
-        Map<String, Object> attributes = ObjectUtils.jsonToMap(metaData);
+        Map<String, Object> attributes = GoogleMetaData.getMetaDataAsMap(
+                ATTRIBUTES_PATH + (waitForChange ? WAIT_FOR_CHANGE : ""));
         Instance instance = this.getInstance(instanceId, zone);
         String fingerprint = instance.getMetadata().getFingerprint();
         return new VmMetaData(attributes, fingerprint);
@@ -1729,17 +1713,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                 append("projectId", this.projectId).
                 append("instanceId", this.instanceId).
                 append("zone", this.zone).
-                append("token", this.accessToken).
-                append("tokenExpire", this.tokenExpire).
                 toString();
-    }
-
-
-    /**
-     * @param accessToken the accessToken to set
-     */
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
     }
 
 
@@ -1749,15 +1723,6 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
-
-
-    /**
-     * @param tokenExpire the tokenExpire to set
-     */
-    public void setTokenExpire(Date tokenExpire) {
-        this.tokenExpire = tokenExpire;
-    }
-
 
     /**
      * @param zone the zone to set
@@ -1837,6 +1802,20 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      */
     public void setBigQueryStreamFailRetries(int bigQueryStreamFailRetries) {
         this.bigQueryStreamFailRetries = bigQueryStreamFailRetries;
+    }
+
+
+    @Override
+    public void setRemote(boolean remote) {
+        this.remote = remote;
+    }
+
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public void setAuthenticationProvider(AuthenticationProvider provider) {
+        this.authenticationProvider = provider;
+        
     }
 
 

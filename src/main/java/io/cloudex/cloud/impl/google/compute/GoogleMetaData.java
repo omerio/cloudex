@@ -18,13 +18,25 @@
  */
 package io.cloudex.cloud.impl.google.compute;
 
-import com.google.api.services.bigquery.model.TableSchema;
+import io.cloudex.framework.utils.ObjectUtils;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * @author Omer Dawelbeit (omerio)
  *
  */
 public class GoogleMetaData {
+    
+    private final static Log log = LogFactory.getLog(GoogleMetaData.class);
 
     // metadata server urls
     public static final String METADATA_SERVER_URL = "http://metadata.google.internal/computeMetadata/v1/";
@@ -80,5 +92,58 @@ public class GoogleMetaData {
     // API error reasons
     public static final String RATE_LIMIT_EXCEEDED = "rateLimitExceeded";
     public static final String QUOTA_EXCEEDED = "quotaExceeded";
+    
+    
+    /**
+     * Call the metadata server, this returns details for the current instance not for
+     * different instances. In order to retrieve the meta data of different instances
+     * we just use the compute api, see getInstance
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    public static String getMetaData(String path) throws IOException {
+        log.debug("Retrieving metadata from server, path: " + path);
+        URL metadata = new URL(METADATA_SERVER_URL + path);
+        HttpURLConnection con = (HttpURLConnection) metadata.openConnection();
+
+        // optional default is GET
+        //con.setRequestMethod("GET");
+
+        //add request header
+        con.setRequestProperty("Metadata-Flavor", "Google");
+
+        int responseCode = con.getResponseCode();
+
+        StringBuilder response = new StringBuilder();
+
+        if(responseCode == 200) {
+            try(BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+            }
+        } else {
+            String msg = "Metadata server responded with status code: " + responseCode;
+            log.error(msg);
+            throw new IOException(msg);
+        }
+        log.debug("Successfully retrieved metadata from server");
+
+        return response.toString();
+    }
+    
+    /**
+     * Return the metadata as a map
+     * @param path
+     * @return
+     */
+    public static Map<String, Object> getMetaDataAsMap(String path) throws IOException {
+        String metaData = getMetaData(path);
+        
+        return ObjectUtils.jsonToMap(metaData);
+    }
+
 
 }
