@@ -16,30 +16,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.cloudex.framework.cloud.api;
 
 
 /**
+ * An asynchronous task
+ * TODO implement java.util.concurrent.Future
  * @author Omer Dawelbeit (omerio)
  *
  */
 public class FutureTask {
-	
-	private boolean done;
 
-	/**
-	 * @return the done
-	 */
-	public boolean isDone() {
-		return done;
-	}
+    private boolean done;
 
-	/**
-	 * @param done the done to set
-	 */
-	public void setDone(boolean done) {
-		this.done = done;
-	}
-	
+    /**
+     * @return the done
+     */
+    public boolean isDone() {
+        return done;
+    }
+
+    /**
+     * @param done the done to set
+     */
+    public void setDone(boolean done) {
+        this.done = done;
+    }
+
 
 }
