@@ -34,7 +34,7 @@ public interface Executable {
 
     /**
      * Run this executable.
-     * @throws IOException
+     * @throws IOException if cloud api calls fail
      */
     public void run() throws IOException; 
 
@@ -52,7 +52,7 @@ public interface Executable {
 
     /**
      * Set the executable metadata.
-     * @param metaData
+     * @param metaData - the current VM metadata
      */
     public void setMetaData(VmMetaData metaData);
 

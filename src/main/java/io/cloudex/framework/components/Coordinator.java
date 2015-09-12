@@ -167,6 +167,8 @@ public class Coordinator extends CommonExecutable {
                 Set<String> outputKeys = taskConfig.getOutput();
 
                 String taskName;
+                
+                log.info("TIMER# Job elapsed time: " + stopwatch);
 
                 if(TargetType.PROCESSOR.equals(taskConfig.getTarget())) {
                     
