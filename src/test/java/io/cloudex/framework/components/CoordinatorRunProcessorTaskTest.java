@@ -167,6 +167,64 @@ public class CoordinatorRunProcessorTaskTest {
         this.checkCost(job.getVmConfig(), coordinator);
     }
     
+    @Test(expected = IOException.class)
+    public void testTaskVmConfigReferenceError() throws IOException {
+
+        final Job job = getJob("CoordinatorTest1.json");
+
+        job.getTasks().get(0).setVmConfigReference("#myTaskVmConfig");
+        
+        final MockUp<CloudService> mockup = new MockUp<CloudService>() {
+
+            @Mock(invocations = 1)
+            public VmMetaData init() throws IOException { 
+                return metaData; 
+            }
+
+            @Mock(invocations = 0)
+            public boolean startInstance(List<VmConfig> configs, boolean block) throws IOException {
+                return false;
+            }
+            
+        };
+      
+        final CloudService service = mockup.getMockInstance();
+        Coordinator coordinator = new Coordinator(job, service);   
+        populateContext(coordinator);
+        
+        coordinator.run();
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskVmConfigReference() throws IOException {
+
+        final Job job = getJob("CoordinatorTest1.json");
+        VmConfig taskVmConfig = new VmConfig();
+        taskVmConfig.setDiskType("Normal");
+        taskVmConfig.setVmType("n1-standard-8");
+        taskVmConfig.setReuse(false);
+        job.getTasks().get(0).setVmConfigReference("#myTaskVmConfig");
+        
+        VmConfig validatedConfig = job.getVmConfig().merge(taskVmConfig);
+        
+        final CloudService service = getCloudService(validatedConfig, 5, true).getMockInstance();
+        Coordinator coordinator = new Coordinator(job, service);   
+        coordinator.getProcessors().addAll(Sets.newHashSet("processor1", "processor2", "processor3", "processor4"));
+        Context context = populateContext(coordinator);
+        context.put("myTaskVmConfig", taskVmConfig);
+        
+        coordinator.run();
+        assertEquals(4, coordinator.getProcessors().size());
+
+        List<Partition> partitions = (List<Partition>) context.get("filePartitions");
+        assertNotNull(partitions);
+
+        assertEquals(5, partitions.size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
+    }
+    
     @SuppressWarnings("unchecked")
     @Test
     public void testTaskVmConfigReUse() throws IOException {

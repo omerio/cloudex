@@ -288,6 +288,14 @@ public class Coordinator extends CommonExecutable {
 
         // do we need to start custom vms for this task?
         VmConfig taskVmConfig = taskConfig.getVmConfig();
+        String taskVmConfigRef = taskConfig.getVmConfigReference();
+        
+        if((taskVmConfig == null) && (taskVmConfigRef != null)) {
+            taskVmConfig = (VmConfig) this.context.resolveValue(taskVmConfigRef);
+            Validate.notNull(taskVmConfig, "Unable to find VmConfig in job context with reference: " + taskVmConfigRef);
+            taskConfig.setVmConfig(taskVmConfig);
+        }
+        
         final boolean taskUsesCustomVms = (taskVmConfig != null);
 
         // check the parition function

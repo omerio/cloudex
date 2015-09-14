@@ -70,6 +70,12 @@ public class TaskConfig implements Serializable {
      * different VM configurations
      */
     private VmConfig vmConfig;
+    
+    /**
+     * Provide the ability to lookup the vmConfig for this task from the 
+     * job context, enables for dynamically configured VMS (Elasticity)
+     */
+    private String vmConfigReference;
 
     /**
      * @return the id
@@ -213,12 +219,27 @@ public class TaskConfig implements Serializable {
     }
 
     /**
+     * @return the vmConfigReference
+     */
+    public String getVmConfigReference() {
+        return vmConfigReference;
+    }
+
+    /**
+     * @param vmConfigReference the vmConfigReference to set
+     */
+    public void setVmConfigReference(String vmConfigReference) {
+        this.vmConfigReference = vmConfigReference;
+    }
+
+    /**
      * check if this instance is valid
      * @return true if valid
      */
     public boolean valid() {
         return ObjectUtils.isValid(TaskConfig.class, this)  
-                && ((TargetType.COORDINATOR.equals(this.target) && (this.vmConfig == null))
+                && ((TargetType.COORDINATOR.equals(this.target) && (this.vmConfig == null) 
+                        && (this.vmConfigReference == null))
                         || (TargetType.PROCESSOR.equals(this.target) && (this.partitioning != null) 
                                 && this.partitioning.valid() && (this.output == null)));
     }
@@ -241,7 +262,8 @@ public class TaskConfig implements Serializable {
                 messages.add("processor tasks should not have any output");
             }
             
-        } else if(TargetType.COORDINATOR.equals(this.target) && (this.vmConfig != null)) {
+        } else if(TargetType.COORDINATOR.equals(this.target) 
+                && ((this.vmConfig != null) || (this.vmConfigReference != null))) {
             messages.add("vm config is not expected for coordinators");
         }
 
