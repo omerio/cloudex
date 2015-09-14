@@ -25,6 +25,6 @@ package io.cloudex.framework.types;
  */
 public enum PartitionType {
 
-    FUNCTION, ITEMS;
+    FUNCTION, ITEMS, COUNT;
 
 }

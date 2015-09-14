@@ -77,7 +77,7 @@ import org.apache.commons.logging.LogFactory;
 public class Coordinator extends CommonExecutable {
 
     private static final Log log = LogFactory.getLog(Coordinator.class);
-    
+
     private static final String NO_TASK = "No Task";
 
     // Tasks execution context
@@ -85,7 +85,7 @@ public class Coordinator extends CommonExecutable {
 
     // processor names
     private Set<String> processors = new HashSet<>();
-    
+
     private Map<String, VmInstance> processorInstances = new HashMap<>();
 
     private Job job;
@@ -93,7 +93,7 @@ public class Coordinator extends CommonExecutable {
     private PartitionFunctionFactory partitionFunctionFactory;
 
     private TaskFactory taskFactory;
-    
+
     private boolean shutdownProcessors;
 
 
@@ -125,7 +125,7 @@ public class Coordinator extends CommonExecutable {
         this.shutdownProcessors = builder.isShutdownProcessors();
 
         Validate.notNull(this.job, "job must be provided");
-        
+
         if(!this.job.valid()) {
             List<String> messages = this.job.getValidationErrors();
             log.error("Job is not valid: " + messages);
@@ -170,23 +170,23 @@ public class Coordinator extends CommonExecutable {
                 Set<String> outputKeys = taskConfig.getOutput();
 
                 String taskName;
-                
+
                 log.info("TIMER# Job elapsed time: " + stopwatch);
 
                 if(TargetType.PROCESSOR.equals(taskConfig.getTarget())) {
-                    
+
                     taskName = this.getTaskName(taskConfig);
                     log.info("Starting processor task: " + taskName);
-                    
+
                     this.runProcessorTask(taskConfig);
 
                 } else {
-                    
+
                     Task task = taskFactory.getTask(taskConfig, context, getCloudService());
                     taskName = this.getTaskName(task);
-                    
+
                     log.info("Starting coordinator task: " + taskName);
-                    
+
                     // run the task
                     if(ErrorAction.CONTINUE.equals(taskConfig.getErrorAction())) {
                         this.runTaskContinue(task);
@@ -197,7 +197,7 @@ public class Coordinator extends CommonExecutable {
 
                     // get the output of the task
                     this.addTaskOutputToContext(task, outputKeys);
-                    
+
                 }
 
                 stopwatch1.stop();
@@ -207,7 +207,7 @@ public class Coordinator extends CommonExecutable {
 
         } catch(Exception e) {
             log.error("An error has occurred", e);
-            
+
             if(e instanceof IOException) {
                 throw (IOException) e;
             } else {
@@ -220,17 +220,17 @@ public class Coordinator extends CommonExecutable {
                 log.info("Shutting down all processors");
                 this.shutdownProcessors();
             }
-            
+
             log.info("Total processors usage cost: " + this.calculateProcessorsCost());
         }
-        
+
         log.debug("Coordinator's context: " + this.context);
-        
+
         stopwatch.stop();
         log.info("TIMER# Job completed in " + stopwatch);
 
     }
-    
+
     /**
      * Calculate the cost of usage of the processor VMs
      * @return - the total cost
@@ -240,10 +240,10 @@ public class Coordinator extends CommonExecutable {
         for(VmInstance instance: this.processorInstances.values()) {
             cost += instance.getCost();
         }
-        
+
         return cost;
     }
-    
+
     /**
      * Shutdown all the procesors
      */
@@ -255,16 +255,16 @@ public class Coordinator extends CommonExecutable {
             config.setInstanceId(processorId);
             configs.add(config);
         }
-        
+
         try {
             this.getCloudService().shutdownInstance(configs);
             //this.processors.clear();
-            
+
         } catch (IOException e) {
             log.error("Failed to shutdown processors", e);
-        
+
         } finally {
-            
+
             // mark all VmInstances as shutdown
             this.updateVmInstances(configs, true);
         }
@@ -280,42 +280,48 @@ public class Coordinator extends CommonExecutable {
      * @throws IOException if cloud api calls fail
      */
     private void runProcessorTask(TaskConfig taskConfig) throws ClassInstantiationException, 
-        InstancePopulationException, IOException {
+    InstancePopulationException, IOException {
 
         final CloudService cloudService = this.getCloudService();
-        
+
         VmConfig vmConfig = this.job.getVmConfig();
-        
+
         // do we need to start custom vms for this task?
         VmConfig taskVmConfig = taskConfig.getVmConfig();
-        boolean taskUsesCustomVms = (taskVmConfig != null);
-        
+        final boolean taskUsesCustomVms = (taskVmConfig != null);
+
         // check the parition function
         PartitionConfig partitionConfig = taskConfig.getPartitioning();
         Map<String, String> partitionInput = partitionConfig.getInput();
-        String itemsKey = partitionInput.get(PartitionFunction.ITEMS_KEY);
-        
+        String itemsKey = null;
+
+        if(partitionInput != null) {
+            itemsKey = partitionInput.get(PartitionFunction.ITEMS_KEY);
+        }
+
         // for partition function the items key is the output key of the function
         if(PartitionType.FUNCTION.equals(partitionConfig.getType())) {
             String output = partitionConfig.getOutput();
             itemsKey = Context.getKeyReference(output);
         }
-        
-        Validate.notNull(itemsKey, "partition items key is required");
+
+        if(!PartitionType.COUNT.equals(partitionConfig.getType())) {
+            Validate.notNull(itemsKey, "partition items key is required");
+        }
 
         // bucket just in case we have long metadata
         String bucket = (String) this.getJobDataValue(Constants.CLOUD_STORAGE_BUCKET_KEY);
         String zoneId = this.job.getVmConfig().getZoneId();
 
         List<String> idleProcessors;
-        
+
         if(taskUsesCustomVms) {
             idleProcessors = Lists.newArrayList();
             log.debug("Task: " + this.getTaskName(taskConfig) + " uses custom vm config: " + taskConfig.getVmConfig());
-            
+
             taskVmConfig = vmConfig.merge(taskConfig.getVmConfig());
             // do we have any existing config that matches what this task need?
-            
+
             for(String instanceId: this.processorInstances.keySet()) {
                 VmInstance instance = this.processorInstances.get(instanceId);
                 if(taskVmConfig.equals(instance.getVmConfig())) {
@@ -323,11 +329,11 @@ public class Coordinator extends CommonExecutable {
                     idleProcessors.add(instanceId);
                 }
             }
-            
+
         } else {
             idleProcessors = Lists.newArrayList(this.processors);
         }
-        
+
         List<String> busyProcessors = new ArrayList<>();
 
         List<VmConfig> vmsConfig = new ArrayList<>();
@@ -335,44 +341,46 @@ public class Coordinator extends CommonExecutable {
 
         int count = 0;
         int index = 0;
-        
+
         int metaDataMaxSize = cloudService.getMaximumMetaDataSize();
-        
+
         Map<String, String> processorInput = new HashMap<>();
         Entry<String, String> partitionItemEntry = null;
 
         if(taskConfig.getInput() != null) {
             processorInput.putAll(taskConfig.getInput());
 
-            for(Entry<String, String> entry: processorInput.entrySet()) {
-                String value = entry.getValue();
-                if(value.equals(itemsKey)) {
-                    partitionItemEntry = entry;
-                    break;
+            if(itemsKey != null) {
+                for(Entry<String, String> entry: processorInput.entrySet()) {
+                    String value = entry.getValue();
+                    if(value.equals(itemsKey)) {
+                        partitionItemEntry = entry;
+                        break;
+                    }
                 }
             }
         }
-        
+
         // for some processor tasks we might not need to give them any thing from the partition item.
         // for example if this task doesn't need any input
         String itemMetaDataKey = null;
 
         if(partitionItemEntry != null) {
             //throw new IllegalArgumentException("expecting an input key/value for partition item in task " 
-              //      + getTaskName(taskConfig));           
+            //      + getTaskName(taskConfig));           
             itemMetaDataKey = partitionItemEntry.getKey();
             // remove the partition item key/value from the input mapping
             processorInput.remove(itemMetaDataKey);
 
         }
-        
+
         // get all the resolved task inputs
         Map<String, String> resolvedInputs = new HashMap<>();
         for(Entry<String, String> entry: processorInput.entrySet()) {
             String value = (String) this.context.resolveValue(entry.getValue());
             resolvedInputs.put(entry.getKey(), value);
         }
-        
+
         Collection<String> items = this.getPartitionItems(taskConfig, partitionConfig, itemsKey);
 
         for(String item: items) {
@@ -380,13 +388,13 @@ public class Coordinator extends CommonExecutable {
             // add the metadata
             VmMetaData metaData = new VmMetaData();
             metaData.setTaskClass(taskConfig.getClassName());
-            
+
             // add the task inputs
             metaData.addUserValues(resolvedInputs);
-            
+
             // do we need to inject the task with the item?
             if(itemMetaDataKey != null) {
-                
+
                 // add the item, first check if it's too long
                 if(item.length() > metaDataMaxSize) {
 
@@ -418,15 +426,15 @@ public class Coordinator extends CommonExecutable {
                 busyProcessors.add(instanceId);
 
                 VmConfig conf;
-                
+
                 if(taskUsesCustomVms) {
                     // if the task uses a custom vm then merge the config with the job vm config
                     conf = taskVmConfig;
-                    
+
                 } else {
                     conf = vmConfig.copy();
                 }
-                
+
                 conf.setInstanceId(instanceId);
                 conf.setMetaData(metaData);
 
@@ -437,7 +445,7 @@ public class Coordinator extends CommonExecutable {
             }
 
         }
-        
+
         if(!taskUsesCustomVms || (taskUsesCustomVms && !Boolean.FALSE.equals(taskConfig.getVmConfig().getReuse()))) {
             this.processors.addAll(busyProcessors);
         }
@@ -448,7 +456,7 @@ public class Coordinator extends CommonExecutable {
                 throw new IOException("Some processors have failed to start");
                 // TODO better error handling and retry
             }
-            
+
             this.updateVmInstances(vmsConfig, false);
         }
 
@@ -468,21 +476,21 @@ public class Coordinator extends CommonExecutable {
 
             this.updateVmInstances(vmsConfig, true);
         }
-        
+
         log.info("Successfully completed processor task " + this.getTaskName(taskConfig));
         log.info("Number of idle processors: " + this.processors.size() + ", instance Ids: " + this.processors);
 
     }
-    
+
     /**
      * Update the VmInstances with start & end date
      * @param configs - the VmConfigs of started/ended processors
      * @param setEnd - true to update the end date on the VmInstance
      */
     private void updateVmInstances(List<VmConfig> configs, boolean setEnd) {
-        
+
         Date now = new Date();
-        
+
         for(VmConfig config: configs) {
             String instanceId = config.getInstanceId();
             VmInstance instance = this.processorInstances.get(instanceId);
@@ -490,15 +498,15 @@ public class Coordinator extends CommonExecutable {
                 instance = new VmInstance(config, now);
                 this.processorInstances.put(instanceId, instance);
             }
-            
+
             if(setEnd) {
                 instance.setEnd(now);
                 this.processors.remove(instanceId);
             }
         }
     }
-    
-    
+
+
     /**
      * Save the meta data for the provide metaData item into a file, then reference it
      * @param metaData - metaData object
@@ -511,7 +519,7 @@ public class Coordinator extends CommonExecutable {
      */
     private void saveMetaDataItemToFile(VmMetaData metaData, String item, String itemMetaDataKey, String bucket, 
             int index, long timestamp) throws IOException {
-        
+
         Validate.notBlank(bucket, "bucket is needed as metadata is larger than maximum allowed.");
 
         log.info("Metadata too large, using file. Size = " + item.length());
@@ -528,7 +536,7 @@ public class Coordinator extends CommonExecutable {
         // update the meta data with the file value
         metaData.addUserValue(itemMetaDataKey + VmMetaData.LONG_METADATA_FILE_Suffix, itemFilename);
     }
-    
+
     /**
      * Wait for all the processors to complete return exceptions if they are thrown by the processors
      * @param processors - the processors
@@ -579,42 +587,56 @@ public class Coordinator extends CommonExecutable {
 
         Collection<String> items = null;
 
-        if(PartitionType.ITEMS.equals(partitionType)) {
+        switch(partitionType) {
 
-            Object value = this.context.resolveValue(itemsKey);
-
-            Validate.notNull(value, "partition items are null or empty for task " + getTaskName(taskConfig));
-
-            if(!(value instanceof Collection)) {
-                throw new IllegalArgumentException("Expecting partition items of type Collection, found: " + value);
-            }
-
-            items = (Collection<String>) value;
-
-            if(items.isEmpty()) {
-                throw new IllegalArgumentException("empty partition items for task " + getTaskName(taskConfig));
-            }
-            
-            // cast an element to a string
-            if(!(items.iterator().next() instanceof String)) {
-                throw new IllegalArgumentException("partition items must be a collection of strings");
-            }
-
-        } else if(PartitionType.FUNCTION.equals(partitionType)) {
-
-            PartitionFunction partitionFunction = this.partitionFunctionFactory.getPartitionFunction(
-                    partitionConfig, context);
-            List<Partition> partitions = partitionFunction.partition();
-            if(partitions == null || partitions.isEmpty()) {
-                throw new IllegalArgumentException("empty partitions for task " + getTaskName(taskConfig));
-            }
-
-            items = Partition.joinPartitionItems(partitions);
-            
-            // add the output of the partition function to the context
-            String output = partitionConfig.getOutput();
-            this.context.put(output, items);
-
+            case COUNT:
+                int count = partitionConfig.getCount();
+                items = new HashSet<>();
+                for(int i = 0; i < count; i++) {
+                    items.add("Item" + i);
+                }
+                break;
+    
+            case FUNCTION:
+                PartitionFunction partitionFunction = this.partitionFunctionFactory.getPartitionFunction(
+                        partitionConfig, context);
+                List<Partition> partitions = partitionFunction.partition();
+                if(partitions == null || partitions.isEmpty()) {
+                    throw new IllegalArgumentException("empty partitions for task " + getTaskName(taskConfig));
+                }
+    
+                items = Partition.joinPartitionItems(partitions);
+    
+                // add the output of the partition function to the context
+                String output = partitionConfig.getOutput();
+                this.context.put(output, items);
+    
+                break;
+    
+            case ITEMS:
+                Object value = this.context.resolveValue(itemsKey);
+    
+                Validate.notNull(value, "partition items are null or empty for task " + getTaskName(taskConfig));
+    
+                if(!(value instanceof Collection)) {
+                    throw new IllegalArgumentException("Expecting partition items of type Collection, found: " + value);
+                }
+    
+                items = (Collection<String>) value;
+    
+                if(items.isEmpty()) {
+                    throw new IllegalArgumentException("empty partition items for task " + getTaskName(taskConfig));
+                }
+    
+                // cast an element to a string
+                if(!(items.iterator().next() instanceof String)) {
+                    throw new IllegalArgumentException("partition items must be a collection of strings");
+                }
+                break;
+                
+            default:
+                throw new IllegalArgumentException("Invalid PartitionType: " + partitionType);
+                
         }
 
         return items;
@@ -642,7 +664,7 @@ public class Coordinator extends CommonExecutable {
     private String getTaskName(Task task) {
         return (task != null) ? task.getClass().getName() : NO_TASK;
     }
-    
+
     /**
      * Get task name from a task config
      * @param taskConfig - the task config
@@ -699,7 +721,7 @@ public class Coordinator extends CommonExecutable {
         private PartitionFunctionFactory partitionFunctionFactory;
 
         private TaskFactory taskFactory;
-        
+
         private boolean shutdownProcessors;
 
         /**

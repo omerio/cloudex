@@ -52,10 +52,12 @@ public class PartitionConfig implements Serializable    {
     // prebuilt functions
     private String functionName;
 
-    @NotNull
+    //@NotNull
     private Map<String, String> input;
 
     private String output;
+    
+    private Integer count;
 
     /**
      * @return the type
@@ -128,17 +130,32 @@ public class PartitionConfig implements Serializable    {
     }
     
     /**
+     * @return the count
+     */
+    public Integer getCount() {
+        return count;
+    }
+
+    /**
+     * @param count the count to set
+     */
+    public void setCount(Integer count) {
+        this.count = count;
+    }
+
+    /**
      * Determine if this instance is valid
      * @return true if valid, false otherwise
      */
     public boolean valid() {
         
         return ObjectUtils.isValid(PartitionConfig.class, this) 
-                && (PartitionType.ITEMS.equals(this.type) 
+                && ((PartitionType.COUNT.equals(this.type) && (this.count != null)) 
+                || ((PartitionType.ITEMS.equals(this.type) 
                         || (PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)
                                 && BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
                                         StringUtils.isBlank(this.functionName)})))
-                && (this.input.get(PartitionFunction.ITEMS_KEY) != null);
+                && ((this.input != null) && (this.input.get(PartitionFunction.ITEMS_KEY) != null))));
         
     }
     
@@ -161,10 +178,20 @@ public class PartitionConfig implements Serializable    {
 
                 messages.add("either functionName or className is required");
             }
+            
+        } else if(PartitionType.COUNT.equals(this.type) && (this.count == null)) {
+            
+            messages.add("count is required for Function type count");
         }
         
-        if(this.input.get(PartitionFunction.ITEMS_KEY) == null) {
-            messages.add("expecting an input with key items");
+        if(!PartitionType.COUNT.equals(this.type)) {
+            
+            if(this.input == null) {
+                messages.add("input may not be null");
+                
+            } else if(this.input.get(PartitionFunction.ITEMS_KEY) == null) {
+                messages.add("expecting an input with key items");
+            }
         }
         
         return messages;

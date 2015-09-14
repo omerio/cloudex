@@ -22,6 +22,7 @@ package io.cloudex.framework.components;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import io.cloudex.framework.cloud.api.CloudService;
 import io.cloudex.framework.cloud.entities.StorageObject;
@@ -86,6 +87,30 @@ public class CoordinatorRunProcessorTaskTest {
     public void setUp() throws Exception {
         metaData = new VmMetaData();
         items = BinPackingPartitionTest.createItems();
+    }
+    
+    /**
+     * Test method for {@link io.cloudex.framework.components.Coordinator#run()}.
+     * @throws IOException 
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskPartitionCount() throws IOException {
+
+        Job job = getJob("CoordinatorTest6.json");
+        VmConfig config = job.getVmConfig();
+        config.setCost(0.25);
+        config.setMinUsage(600L);
+        final CloudService service = getCloudService(config, 5).getMockInstance();
+        Coordinator coordinator = new Coordinator(job, service);        
+        Context context = populateContext(coordinator);
+        coordinator.run();
+        assertEquals(5, coordinator.getProcessors().size());
+
+        List<Partition> partitions = (List<Partition>) context.get("filePartitions");
+        assertNull(partitions);
+        
+        this.checkCost(config, coordinator);
     }
 
     /**

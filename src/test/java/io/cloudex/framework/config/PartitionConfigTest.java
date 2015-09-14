@@ -107,6 +107,30 @@ public class PartitionConfigTest {
     }
     
     @Test
+    public void testValidTypeCount() {
+        PartitionConfig config = new PartitionConfig();
+        //config.setFunctionName("TestFunction");
+        config.setType(PartitionType.COUNT);
+        config.setCount(5);
+        
+        assertTrue(config.valid());
+        assertEquals(0, config.getValidationErrors().size());
+    }
+    
+    @Test
+    public void testInValidTypeCount() {
+        PartitionConfig config = new PartitionConfig();
+        //config.setFunctionName("TestFunction");
+        config.setType(PartitionType.COUNT);
+        //config.setCount(5);
+        
+        assertFalse(config.valid());
+        System.out.println(config.getValidationErrors());
+        assertEquals(1, config.getValidationErrors().size());
+        assertEquals("count is required for Function type count", config.getValidationErrors().get(0));
+    }
+    
+    @Test
     public void testInValidOutput() {
         
         config.setOutput(null);
