@@ -22,6 +22,7 @@ package io.cloudex.framework.components;
 import io.cloudex.framework.CommonExecutable;
 import io.cloudex.framework.cloud.api.ApiUtils;
 import io.cloudex.framework.cloud.api.CloudService;
+import io.cloudex.framework.cloud.entities.VmInstance;
 import io.cloudex.framework.cloud.entities.VmMetaData;
 import io.cloudex.framework.config.Job;
 import io.cloudex.framework.config.PartitionConfig;
@@ -68,7 +69,7 @@ import org.apache.commons.logging.LogFactory;
  * different from the ones used for the job. These VMs will be shutdown as soon as the task
  * is completed and won't be added to the VM pool for reuse.
  * 
- * TODO add processor vm object with start/end times and vm config (stats + config)
+ * This coordinator keeps track processor vms stats, such as start/end times, cost and vm config.
  * 
  * @author Omer Dawelbeit (omerio)
  *
@@ -84,6 +85,8 @@ public class Coordinator extends CommonExecutable {
 
     // processor names
     private Set<String> processors = new HashSet<>();
+    
+    private Map<String, VmInstance> processorInstances = new HashMap<>();
 
     private Job job;
 
@@ -217,6 +220,8 @@ public class Coordinator extends CommonExecutable {
                 log.info("Shutting down all processors");
                 this.shutdownProcessors();
             }
+            
+            log.info("Total processors usage cost: " + this.calculateProcessorsCost());
         }
         
         log.debug("Coordinator's context: " + this.context);
@@ -224,6 +229,19 @@ public class Coordinator extends CommonExecutable {
         stopwatch.stop();
         log.info("TIMER# Job completed in " + stopwatch);
 
+    }
+    
+    /**
+     * Calculate the cost of usage of the processor VMs
+     * @return - the total cost
+     */
+    public double calculateProcessorsCost() {
+        double cost = 0.0;
+        for(VmInstance instance: this.processorInstances.values()) {
+            cost += instance.getCost();
+        }
+        
+        return cost;
     }
     
     /**
@@ -240,10 +258,15 @@ public class Coordinator extends CommonExecutable {
         
         try {
             this.getCloudService().shutdownInstance(configs);
-            this.processors.clear();
+            //this.processors.clear();
             
         } catch (IOException e) {
             log.error("Failed to shutdown processors", e);
+        
+        } finally {
+            
+            // mark all VmInstances as shutdown
+            this.updateVmInstances(configs, true);
         }
     }
 
@@ -262,8 +285,11 @@ public class Coordinator extends CommonExecutable {
         final CloudService cloudService = this.getCloudService();
         
         VmConfig vmConfig = this.job.getVmConfig();
+        
         // do we need to start custom vms for this task?
-        boolean taskUsesCustomVms = (taskConfig.getVmConfig() != null);
+        VmConfig taskVmConfig = taskConfig.getVmConfig();
+        boolean taskUsesCustomVms = (taskVmConfig != null);
+        
         // check the parition function
         PartitionConfig partitionConfig = taskConfig.getPartitioning();
         Map<String, String> partitionInput = partitionConfig.getInput();
@@ -286,6 +312,17 @@ public class Coordinator extends CommonExecutable {
         if(taskUsesCustomVms) {
             idleProcessors = Lists.newArrayList();
             log.debug("Task: " + this.getTaskName(taskConfig) + " uses custom vm config: " + taskConfig.getVmConfig());
+            
+            taskVmConfig = vmConfig.merge(taskConfig.getVmConfig());
+            // do we have any existing config that matches what this task need?
+            
+            for(String instanceId: this.processorInstances.keySet()) {
+                VmInstance instance = this.processorInstances.get(instanceId);
+                if(taskVmConfig.equals(instance.getVmConfig())) {
+                    log.debug("Found existing processor that matches task requirements: " + instance.getVmConfig());
+                    idleProcessors.add(instanceId);
+                }
+            }
             
         } else {
             idleProcessors = Lists.newArrayList(this.processors);
@@ -384,7 +421,7 @@ public class Coordinator extends CommonExecutable {
                 
                 if(taskUsesCustomVms) {
                     // if the task uses a custom vm then merge the config with the job vm config
-                    conf = vmConfig.merge(taskConfig.getVmConfig());
+                    conf = taskVmConfig;
                     
                 } else {
                     conf = vmConfig.copy();
@@ -401,7 +438,7 @@ public class Coordinator extends CommonExecutable {
 
         }
         
-        if(!taskUsesCustomVms) {
+        if(!taskUsesCustomVms || (taskUsesCustomVms && !Boolean.FALSE.equals(taskConfig.getVmConfig().getReuse()))) {
             this.processors.addAll(busyProcessors);
         }
 
@@ -411,6 +448,8 @@ public class Coordinator extends CommonExecutable {
                 throw new IOException("Some processors have failed to start");
                 // TODO better error handling and retry
             }
+            
+            this.updateVmInstances(vmsConfig, false);
         }
 
         IOException processorException = this.waitForProcessors(busyProcessors, zoneId);
@@ -421,16 +460,44 @@ public class Coordinator extends CommonExecutable {
             throw processorException;
         }
 
-        if(taskUsesCustomVms) {
+        if(taskUsesCustomVms && Boolean.FALSE.equals(taskConfig.getVmConfig().getReuse())) {
             // shutdown the custom vms
             log.debug("Shutting down custom vms: " + vmsConfig + " for task: " + this.getTaskName(taskConfig));
             this.getCloudService().shutdownInstance(vmsConfig);
+            // just in case if we have this vm in the processors then remove it
+
+            this.updateVmInstances(vmsConfig, true);
         }
         
         log.info("Successfully completed processor task " + this.getTaskName(taskConfig));
         log.info("Number of idle processors: " + this.processors.size() + ", instance Ids: " + this.processors);
 
     }
+    
+    /**
+     * Update the VmInstances with start & end date
+     * @param configs - the VmConfigs of started/ended processors
+     * @param setEnd - true to update the end date on the VmInstance
+     */
+    private void updateVmInstances(List<VmConfig> configs, boolean setEnd) {
+        
+        Date now = new Date();
+        
+        for(VmConfig config: configs) {
+            String instanceId = config.getInstanceId();
+            VmInstance instance = this.processorInstances.get(instanceId);
+            if(instance == null) {
+                instance = new VmInstance(config, now);
+                this.processorInstances.put(instanceId, instance);
+            }
+            
+            if(setEnd) {
+                instance.setEnd(now);
+                this.processors.remove(instanceId);
+            }
+        }
+    }
+    
     
     /**
      * Save the meta data for the provide metaData item into a file, then reference it
@@ -759,6 +826,13 @@ public class Coordinator extends CommonExecutable {
      */
     protected final Set<String> getProcessors() {
         return processors;
+    }
+
+    /**
+     * @return the processorInstances
+     */
+    protected Map<String, VmInstance> getProcessorInstances() {
+        return processorInstances;
     }
 
     /**

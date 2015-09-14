@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import io.cloudex.framework.cloud.api.CloudService;
 import io.cloudex.framework.cloud.entities.StorageObject;
+import io.cloudex.framework.cloud.entities.VmInstance;
 import io.cloudex.framework.cloud.entities.VmMetaData;
 import io.cloudex.framework.config.Job;
 import io.cloudex.framework.config.JobTest;
@@ -40,6 +41,7 @@ import io.cloudex.framework.types.ProcessorStatus;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +97,10 @@ public class CoordinatorRunProcessorTaskTest {
     public void testTaskPartitionFunction() throws IOException {
 
         Job job = getJob("CoordinatorTest1.json");
-        final CloudService service = getCloudService(job.getVmConfig(), 5).getMockInstance();
+        VmConfig config = job.getVmConfig();
+        config.setCost(0.25);
+        config.setMinUsage(600L);
+        final CloudService service = getCloudService(config, 5).getMockInstance();
         Coordinator coordinator = new Coordinator(job, service);        
         Context context = populateContext(coordinator);
         coordinator.run();
@@ -105,6 +110,8 @@ public class CoordinatorRunProcessorTaskTest {
         assertNotNull(partitions);
 
         assertEquals(5, partitions.size());
+        
+        this.checkCost(config, coordinator);
     }
     
     @SuppressWarnings("unchecked")
@@ -115,6 +122,7 @@ public class CoordinatorRunProcessorTaskTest {
         VmConfig taskVmConfig = new VmConfig();
         taskVmConfig.setDiskType("Normal");
         taskVmConfig.setVmType("n1-standard-8");
+        taskVmConfig.setReuse(false);
         job.getTasks().get(0).setVmConfig(taskVmConfig);
         
         VmConfig validatedConfig = job.getVmConfig().merge(taskVmConfig);
@@ -130,6 +138,114 @@ public class CoordinatorRunProcessorTaskTest {
         assertNotNull(partitions);
 
         assertEquals(5, partitions.size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskVmConfigReUse() throws IOException {
+
+        Job job = getJob("CoordinatorTest1.json");
+        VmConfig taskVmConfig = new VmConfig();
+        taskVmConfig.setDiskType("Normal");
+        taskVmConfig.setVmType("n1-standard-8");
+        //taskVmConfig.setReuse(false);
+        job.getTasks().get(0).setVmConfig(taskVmConfig);
+        
+        VmConfig validatedConfig = job.getVmConfig().merge(taskVmConfig);
+        
+        final CloudService service = getCloudService(validatedConfig, 5, true).getMockInstance();
+        Coordinator coordinator = new Coordinator(job, service);   
+        coordinator.getProcessors().addAll(Sets.newHashSet("processor1", "processor2", "processor3", "processor4"));
+        Context context = populateContext(coordinator);
+        coordinator.run();
+        assertEquals(9, coordinator.getProcessors().size());
+
+        List<Partition> partitions = (List<Partition>) context.get("filePartitions");
+        assertNotNull(partitions);
+
+        assertEquals(5, partitions.size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskVmConfigExisting() throws IOException {
+
+        Job job = getJob("CoordinatorTest1.json");
+        VmConfig taskVmConfig = new VmConfig();
+        taskVmConfig.setDiskType("Normal");
+        taskVmConfig.setVmType("n1-standard-8");
+        //taskVmConfig.setReuse(false);
+        job.getTasks().get(0).setVmConfig(taskVmConfig);
+        
+        VmConfig validatedConfig = job.getVmConfig().merge(taskVmConfig);
+        
+        final CloudService service = getCloudService(validatedConfig, 2, true).getMockInstance();
+        Coordinator coordinator = new Coordinator(job, service);   
+        coordinator.getProcessors().addAll(Sets.newHashSet("processor1", "processor2", "processor3", "processor4"));
+         
+        coordinator.getProcessorInstances().put("processor1", this.getVmInstance(validatedConfig));
+        coordinator.getProcessorInstances().put("processor2", this.getVmInstance(validatedConfig));
+        coordinator.getProcessorInstances().put("processor3", this.getVmInstance(validatedConfig));
+        //coordinator.getProcessorInstances().put("processor4", this.getVmInstance(validatedConfig));
+        
+        Context context = populateContext(coordinator);
+        coordinator.run();
+        assertEquals(6, coordinator.getProcessors().size());
+
+        List<Partition> partitions = (List<Partition>) context.get("filePartitions");
+        assertNotNull(partitions);
+
+        assertEquals(5, partitions.size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskVmConfigExistingNoReuse() throws IOException {
+
+        Job job = getJob("CoordinatorTest1.json");
+        VmConfig taskVmConfig = new VmConfig();
+        taskVmConfig.setDiskType("Normal");
+        taskVmConfig.setVmType("n1-standard-8");
+        taskVmConfig.setReuse(false);
+        job.getTasks().get(0).setVmConfig(taskVmConfig);
+        
+        VmConfig validatedConfig = job.getVmConfig().merge(taskVmConfig);
+        
+        final CloudService service = getCloudService(validatedConfig, 2, true).getMockInstance();
+        Coordinator coordinator = new Coordinator(job, service);   
+        coordinator.getProcessors().addAll(Sets.newHashSet("processor1", "processor2", "processor3", "processor4"));
+         
+        coordinator.getProcessorInstances().put("processor1", this.getVmInstance(validatedConfig));
+        coordinator.getProcessorInstances().put("processor2", this.getVmInstance(validatedConfig));
+        coordinator.getProcessorInstances().put("processor3", this.getVmInstance(validatedConfig));
+        //coordinator.getProcessorInstances().put("processor4", this.getVmInstance(validatedConfig));
+        
+        Context context = populateContext(coordinator);
+        coordinator.run();
+        //  it will shutdown the two processors that were started. The existing 3 won't be shutdown
+        // we might want to change this behaviour in the futue specially if we are caching expensive
+        // processors
+        assertEquals(4, coordinator.getProcessors().size());
+
+        List<Partition> partitions = (List<Partition>) context.get("filePartitions");
+        assertNotNull(partitions);
+
+        assertEquals(5, partitions.size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
+    }
+    
+    private VmInstance getVmInstance(VmConfig config) {
+        VmInstance instance = new VmInstance();
+        instance.setStart(new Date());
+        instance.setVmConfig(config);
+        return instance;
     }
     
     /**
@@ -153,6 +269,8 @@ public class CoordinatorRunProcessorTaskTest {
         assertNotNull(partitions);
 
         assertEquals(5, partitions.size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
         
     }
     
@@ -237,6 +355,8 @@ public class CoordinatorRunProcessorTaskTest {
         coordinator.run();
         assertEquals(4, coordinator.getProcessors().size());
         
+        this.checkCost(job.getVmConfig(), coordinator);
+        
     }
 
     /**
@@ -263,6 +383,8 @@ public class CoordinatorRunProcessorTaskTest {
         assertNotNull(partitions);
 
         assertEquals(5, partitions.size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
 
     }
 
@@ -291,6 +413,8 @@ public class CoordinatorRunProcessorTaskTest {
         assertNotNull(partitions);
 
         assertEquals(5, partitions.size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
     }
 
     /**
@@ -338,6 +462,8 @@ public class CoordinatorRunProcessorTaskTest {
 
         assertEquals(5, partitions.size());
         
+        this.checkCost(job.getVmConfig(), coordinator);
+        
     }
 
     /**
@@ -356,6 +482,8 @@ public class CoordinatorRunProcessorTaskTest {
         context.put("fileItems", items);
         coordinator.run();
         assertEquals(3, coordinator.getProcessors().size());
+        
+        this.checkCost(job.getVmConfig(), coordinator);
 
     }
 
@@ -468,6 +596,8 @@ public class CoordinatorRunProcessorTaskTest {
 
         assertEquals(5, partitions.size());
         
+        this.checkCost(job.getVmConfig(), coordinator);
+        
         
     }
     
@@ -551,6 +681,7 @@ public class CoordinatorRunProcessorTaskTest {
 
         assertEquals(5, partitions.size());
         
+        this.checkCost(job.getVmConfig(), coordinator);
         
     }
 
@@ -579,6 +710,20 @@ public class CoordinatorRunProcessorTaskTest {
         System.out.println(job.getValidationErrors());
         assertTrue(job.valid()); 
         return job;
+    }
+    
+    private void checkCost(VmConfig config, Coordinator coordinator) {
+        
+        int numProcessors = coordinator.getProcessors().size();
+        
+        double totalCost = 0.0;
+        
+        if((config.getCost() != null) && (config.getMinUsage() != null)) {
+            totalCost = numProcessors * config.getCost() * config.getMinUsage() / 3600.0;
+        }
+        
+        assertEquals(totalCost, coordinator.calculateProcessorsCost(), 0.00001);
+        
     }
 
     /**
@@ -676,7 +821,7 @@ public class CoordinatorRunProcessorTaskTest {
                 System.out.println("Shutting down instances: " + configs);
                 
                 assertNotNull(configs);
-                assertEquals(5, configs.size());
+                assertEquals(numOfProcessors, configs.size());
 
                 for(VmConfig config: configs) {
                     assertNotNull(config.getInstanceId());

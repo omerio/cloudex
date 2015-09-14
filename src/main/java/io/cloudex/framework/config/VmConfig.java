@@ -29,6 +29,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 /**
@@ -55,7 +56,7 @@ public class VmConfig implements Serializable {
     @NotNull
     @Size(min = 1)
     private String vmType;
-
+    
     // for Google, this is an example
     // https://www.googleapis.com/compute/v1/projects/ecarf-1000/global/networks/default
     @NotNull
@@ -74,6 +75,23 @@ public class VmConfig implements Serializable {
     private transient VmMetaData metaData;
     
     private transient String instanceId;
+    
+    // VM specification settings
+    // The hourly cost of this VM
+    private Double cost;
+    
+    // the minimum billed usage in seconds, some cloud providers like Google 
+    // for example bill for a minimum of 10mins
+    private Long minUsage;
+ 
+    // The VM system memory in GB
+    private Integer memory;
+    
+    // The number of Virtual CPUs
+    private Integer cores;
+    
+    // Should this VM be reused, default is true
+    private Boolean reuse;
 
     /**
      * @return the instanceId
@@ -188,6 +206,82 @@ public class VmConfig implements Serializable {
         this.diskType = diskType;
     }
 
+    /**
+     * @return the cost
+     */
+    public Double getCost() {
+        return cost;
+    }
+
+    /**
+     * Set the hourly cost of this VM
+     * @param cost the cost to set
+     */
+    public void setCost(Double cost) {
+        this.cost = cost;
+    }
+
+    /**
+     * @return the minUsage
+     */
+    public Long getMinUsage() {
+        return minUsage;
+    }
+
+    /**
+     * Set the minimum billed usage in seconds, some cloud providers like Google 
+    // for example bill for a minimum of 10mins
+     * @param minUsage the minUsage to set
+     */
+    public void setMinUsage(Long minUsage) {
+        this.minUsage = minUsage;
+    }
+
+    /**
+     * @return the memory
+     */
+    public Integer getMemory() {
+        return memory;
+    }
+
+    /**
+     * set the VM system memory in GB
+     * @param memory the memory to set
+     */
+    public void setMemory(Integer memory) {
+        this.memory = memory;
+    }
+
+    /**
+     * @return the cores
+     */
+    public Integer getCores() {
+        return cores;
+    }
+
+    /**
+     * Set the number of Virtual CPUs
+     * @param cores the cores to set
+     */
+    public void setCores(Integer cores) {
+        this.cores = cores;
+    }
+
+    /**
+     * @return the reuse
+     */
+    public Boolean getReuse() {
+        return reuse;
+    }
+
+    /**
+     * Set if this VM should be reused, default is true
+     * @param reuse the reuse to set
+     */
+    public void setReuse(Boolean reuse) {
+        this.reuse = reuse;
+    }
+
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
@@ -210,6 +304,13 @@ public class VmConfig implements Serializable {
         vmConfig.setStartupScript(this.startupScript);
         vmConfig.setVmType(this.vmType);
         vmConfig.setZoneId(this.zoneId);
+        
+        // settings
+        vmConfig.setCores(this.cores);
+        vmConfig.setCost(this.cost);
+        vmConfig.setMemory(this.memory);
+        vmConfig.setReuse(this.reuse);
+        vmConfig.setMinUsage(this.minUsage);
         return vmConfig;
     }
     
@@ -246,6 +347,27 @@ public class VmConfig implements Serializable {
         if(StringUtils.isNotBlank(config.getZoneId())) {
             vmConfig.setZoneId(config.getZoneId());
         }
+        
+        if(config.getCores() != null) {
+            vmConfig.setCores(this.cores);
+        }
+
+        if(config.getCost() != null) {
+            vmConfig.setCost(this.cost);
+        }
+
+        if(config.getMemory() != null) {
+            vmConfig.setMemory(this.memory);
+        }
+
+        if(config.getReuse() != null) {
+            vmConfig.setReuse(this.reuse);
+        }
+
+        if(config.getMinUsage() != null) {
+            vmConfig.setMinUsage(this.minUsage);
+        }
+        
         return vmConfig;
         
     }
@@ -264,6 +386,29 @@ public class VmConfig implements Serializable {
      */
     public List<String> getValidationErrors() {
         return ObjectUtils.getValidationErrors(VmConfig.class, this);
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) { 
+            return false; 
+        }
+        if (obj == this) { 
+            return true; 
+        }
+        if (obj.getClass() != getClass()) {
+            return false;
+        }
+        VmConfig rhs = (VmConfig) obj;
+        return new EqualsBuilder()
+            //.appendSuper(super.equals(obj))
+            .append(this.diskType, rhs.getDiskType())
+            .append(this.imageId, rhs.getImageId())
+            .append(this.networkId, rhs.getNetworkId())
+            .append(this.startupScript, rhs.getStartupScript())
+            .append(this.vmType, rhs.getVmType())
+            .append(this.zoneId, rhs.getZoneId())
+            .isEquals();
     }
 
 }
