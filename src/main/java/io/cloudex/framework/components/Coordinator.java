@@ -558,7 +558,10 @@ public class Coordinator extends CommonExecutable {
         // wait for the VMs to finish their loading
         for(String instanceId: processors) {   
             boolean ready = false;
-
+            // TODO this code waits for one processor until it's available then moves to the next
+            // need to restructure it such that each processor failure is reported immediately
+            
+            // TODO add timeout, in case one processor crashes
             do {
                 ApiUtils.block(this.getCloudService().getApiRecheckDelay());
 
@@ -581,7 +584,7 @@ public class Coordinator extends CommonExecutable {
      * Get the items that we will use for partition the work between the processors. If a partition function
      * is used then the output of the partition function is added to the context.
      * @param taskConfig - the current task config
-     * @param partitionConfig - the parition config for the task
+     * @param partitionConfig - the partition config for the task
      * @param itemsKey - the key for the partition items, this is specified in the partitionConfig
      * @return Collection partition items
      * @throws ClassInstantiationException if the population of the bean fails
