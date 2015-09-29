@@ -46,6 +46,7 @@ import io.cloudex.framework.utils.FileUtils;
 import io.cloudex.framework.utils.ObjectUtils;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -56,12 +57,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
-
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 
 
 /**
@@ -564,14 +565,18 @@ public class Coordinator extends CommonExecutable {
             // TODO add timeout, in case one processor crashes
             do {
                 ApiUtils.block(this.getCloudService().getApiRecheckDelay());
-
-                VmMetaData metaData = this.getCloudService().getMetaData(instanceId, zoneId);
-                ready = ProcessorStatus.READY.equals(metaData.getProcessorStatus());
-                // check for ERROR status
-                if(ProcessorStatus.ERROR.equals(metaData.getProcessorStatus())) {
-                    processorException = ApiUtils.exceptionFromCloudExError(metaData, instanceId);
-                    log.error(instanceId + " processor has failed", processorException);
-                    break;
+                try {
+                    VmMetaData metaData = this.getCloudService().getMetaData(instanceId, zoneId);
+                    ready = ProcessorStatus.READY.equals(metaData.getProcessorStatus());
+                    // check for ERROR status
+                    if(ProcessorStatus.ERROR.equals(metaData.getProcessorStatus())) {
+                        processorException = ApiUtils.exceptionFromCloudExError(metaData, instanceId);
+                        log.error(instanceId + " processor has failed", processorException);
+                        break;
+                    }
+                    
+                } catch(SocketTimeoutException e) {
+                    log.warn("Timeout exception whilst waiting for processor metadata update", e);
                 }
 
             } while (!ready);
