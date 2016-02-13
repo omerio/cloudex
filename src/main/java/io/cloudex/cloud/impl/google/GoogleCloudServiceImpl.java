@@ -678,6 +678,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             // update the fingerprint of the current metadata
             Instance instance = this.getInstance(instanceId, zoneId);
             metaData.setFingerprint(instance.getMetadata().getFingerprint());
+        
+        } else {
+            ApiUtils.block(this.getApiRecheckDelay());
         }
     }
 
@@ -690,7 +693,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      */
     protected void blockOnOperation(Operation operation, String zoneId) throws IOException {
         do {
-            // sleep for 10 seconds before checking the operation status
+            // sleep for 2 seconds before checking the operation status
             ApiUtils.block(this.getApiRecheckDelay());
 
             operation = this.getCompute().zoneOperations().get(projectId, zoneId, operation.getName())
