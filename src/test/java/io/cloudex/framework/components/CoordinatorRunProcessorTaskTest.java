@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import io.cloudex.framework.cloud.api.CloudService;
 import io.cloudex.framework.cloud.entities.StorageObject;
 import io.cloudex.framework.cloud.entities.VmInstance;
@@ -406,7 +407,7 @@ public class CoordinatorRunProcessorTaskTest {
                     String zoneId, String instanceId, boolean block) throws IOException {
                 assertNotNull(zoneId);
                 assertTrue(processors.contains(instanceId));
-                assertTrue(block);
+                assertFalse(block);
                 assertNotNull(metaData);
                 assertNotNull(metaData.getTaskClass());
                 assertTrue(metaData.getUserMetaData().isEmpty());
@@ -641,7 +642,7 @@ public class CoordinatorRunProcessorTaskTest {
                 System.out.println("Updating metadata for instance: " + instanceId);
                 assertNotNull(instanceId);
                 assertNotNull(zoneId);
-                assertTrue(block);
+                assertFalse(block);
                 assertNotNull(metaData.getTaskClass());
 
                 if(metaDataKeys != null) {
@@ -727,7 +728,7 @@ public class CoordinatorRunProcessorTaskTest {
                 System.out.println("Updating metadata for instance: " + instanceId);
                 assertNotNull(instanceId);
                 assertNotNull(zoneId);
-                assertTrue(block);
+                assertFalse(block);
                 assertNotNull(metaData.getTaskClass());
 
                 if(metaDataKeys != null) {
