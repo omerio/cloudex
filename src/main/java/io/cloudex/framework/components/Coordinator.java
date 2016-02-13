@@ -424,7 +424,7 @@ public class Coordinator extends CommonExecutable {
                 idleProcessors.remove(idleProcessors.indexOf(instanceId));
                 VmMetaData processorMetaData = cloudService.getMetaData(instanceId, zoneId);
                 processorMetaData.getFollowUp(metaData);
-                cloudService.updateMetadata(metaData, zoneId, instanceId, true);
+                cloudService.updateMetadata(metaData, zoneId, instanceId, false);
                 busyProcessors.add(instanceId);
 
 
