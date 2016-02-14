@@ -158,6 +158,7 @@ public class BinPackingPartition implements PartitionFunction {
             bin.calculateScale();
         }
 
+        // FIXME this needs to change to at least try to spread the remaining items equally!
         //add anything that is remaining to the last set
         if(!items.isEmpty()) {
             bins.get(bins.size() - 1).addAll(items);
