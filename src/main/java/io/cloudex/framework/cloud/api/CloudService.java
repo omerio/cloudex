@@ -78,8 +78,16 @@ public interface CloudService {
      * @param block - true to wait for the api call to complete, false to return immediately
      * @throws IOException if any of the cloud api calls fail
      */
-    public void updateMetadata(VmMetaData metaData, 
+    public String updateMetadata(VmMetaData metaData, 
             String zoneId, String instanceId, boolean block) throws IOException;
+    
+    /**
+     * Block and wait the operations with the provided references to complete
+     * @param references - the operations references
+     * @param zoneId  - the zone or region id
+     * @throws IOException if any of the cloud api calls fail
+     */
+    public void blockOnComputeOperations(List<String> references, String zoneId) throws IOException;
 
     /**
      * Create VM instances, optionally block until all are created. If any fails then the returned flag is false
@@ -238,5 +246,6 @@ public interface CloudService {
      * 
      */
     public <T> void setAuthenticationProvider(AuthenticationProvider<T> provider);
+
 
 }

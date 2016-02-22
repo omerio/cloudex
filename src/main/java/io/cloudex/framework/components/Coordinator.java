@@ -391,6 +391,8 @@ public class Coordinator extends CommonExecutable {
         }
 
         Collection<String> items = this.getPartitionItems(taskConfig, partitionConfig, itemsKey);
+        
+        List<String> operations = new ArrayList<>();
 
         for(String item: items) {
 
@@ -424,7 +426,7 @@ public class Coordinator extends CommonExecutable {
                 idleProcessors.remove(idleProcessors.indexOf(instanceId));
                 VmMetaData processorMetaData = cloudService.getMetaData(instanceId, zoneId);
                 processorMetaData.getFollowUp(metaData);
-                cloudService.updateMetadata(metaData, zoneId, instanceId, false);
+                operations.add(cloudService.updateMetadata(metaData, zoneId, instanceId, false));
                 busyProcessors.add(instanceId);
 
 
@@ -453,6 +455,11 @@ public class Coordinator extends CommonExecutable {
                 count++;
             }
 
+        }
+        
+        if(!operations.isEmpty()) {
+            // block and wait for the meta data operations to complete
+            cloudService.blockOnComputeOperations(operations, zoneId);
         }
 
         if(!taskUsesCustomVms || (taskUsesCustomVms && !Boolean.FALSE.equals(taskConfig.getVmConfig().getReuse()))) {

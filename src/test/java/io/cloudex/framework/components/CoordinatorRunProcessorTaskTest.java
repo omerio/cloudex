@@ -301,7 +301,7 @@ public class CoordinatorRunProcessorTaskTest {
         
         VmConfig validatedConfig = job.getVmConfig().merge(taskVmConfig);
         
-        final CloudService service = getCloudService(validatedConfig, 2, true).getMockInstance();
+        CloudService service = getCloudService(validatedConfig, 2, true).getMockInstance();
         Coordinator coordinator = new Coordinator(job, service);   
         coordinator.getProcessors().addAll(Sets.newHashSet("processor1", "processor2", "processor3", "processor4"));
          
@@ -403,7 +403,7 @@ public class CoordinatorRunProcessorTaskTest {
             }
             
             @Mock(invocations = 4)
-            public void updateMetadata(VmMetaData metaData, 
+            public String updateMetadata(VmMetaData metaData, 
                     String zoneId, String instanceId, boolean block) throws IOException {
                 assertNotNull(zoneId);
                 assertTrue(processors.contains(instanceId));
@@ -411,6 +411,8 @@ public class CoordinatorRunProcessorTaskTest {
                 assertNotNull(metaData);
                 assertNotNull(metaData.getTaskClass());
                 assertTrue(metaData.getUserMetaData().isEmpty());
+                
+                return "operation-" + instanceId;
             }
 
             @Mock(minInvocations = 1)
@@ -638,7 +640,7 @@ public class CoordinatorRunProcessorTaskTest {
             }
             
             @Mock(invocations = 2)
-            public void updateMetadata(VmMetaData metaData, String zoneId, String instanceId, boolean block) throws IOException {
+            public String updateMetadata(VmMetaData metaData, String zoneId, String instanceId, boolean block) throws IOException {
                 System.out.println("Updating metadata for instance: " + instanceId);
                 assertNotNull(instanceId);
                 assertNotNull(zoneId);
@@ -656,6 +658,12 @@ public class CoordinatorRunProcessorTaskTest {
                         assertTrue("Key in metadata, but not in metaData keys to check " + key, metaDataKeys.contains(key));
                     }
                 }
+                return "operation-" + instanceId;
+            }
+            
+            @Mock(invocations = 1)
+            public void blockOnComputeOperations(List<String> references, String zoneId) throws IOException {
+                assertEquals(2, references.size());
             }
             
             
@@ -722,7 +730,7 @@ public class CoordinatorRunProcessorTaskTest {
             }
             
             @Mock(invocations = 5)
-            public void updateMetadata(VmMetaData metaData, String zoneId, String instanceId, boolean block) 
+            public String updateMetadata(VmMetaData metaData, String zoneId, String instanceId, boolean block) 
                     throws IOException {
                 
                 System.out.println("Updating metadata for instance: " + instanceId);
@@ -738,6 +746,13 @@ public class CoordinatorRunProcessorTaskTest {
                         assertNotNull("Missing key in metadata: " + key, userData.get(key));
                     }
                 }
+                
+                return "operation-" + instanceId;
+            }
+            
+            @Mock(invocations = 1)
+            public void blockOnComputeOperations(List<String> references, String zoneId) throws IOException {
+                assertEquals(5, references.size());
             }
             
             
@@ -886,6 +901,11 @@ public class CoordinatorRunProcessorTaskTest {
             @Mock(minInvocations = 1)
             public int getApiRecheckDelay() { 
                 return 0; 
+            }
+            
+            @Mock(maxInvocations = 1)
+            public void blockOnComputeOperations(List<String> references, String zoneId) throws IOException {
+                // TODO have an option to specify if this will get called or not
             }
             
             @Mock
