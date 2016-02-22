@@ -661,7 +661,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException
      */
     @Override
-    public void updateMetadata(VmMetaData metaData, 
+    public String updateMetadata(VmMetaData metaData, 
             String zoneId, String instanceId, boolean block) throws IOException {
 
         Metadata metadata = this.getGoogleMetaData(metaData);
@@ -679,8 +679,37 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             Instance instance = this.getInstance(instanceId, zoneId);
             metaData.setFingerprint(instance.getMetadata().getFingerprint());
         
-        } else {
-            ApiUtils.block(this.getApiRecheckDelay());
+        }
+        
+        return operation.getName();
+    }
+    
+    /**
+     * Block and wait the operations with the provided references to complete
+     * @param references
+     * @param zoneId
+     * @throws IOException
+     */
+    @Override
+    public void blockOnComputeOperations(List<String> references, String zoneId) throws IOException {
+
+        for(String reference: references) {
+            
+            Operation operation = null;
+
+            do {
+                
+                 operation = this.getCompute().zoneOperations().get(projectId, zoneId, reference)
+                        .setOauthToken(this.getOAuthToken()).execute();
+
+
+                // check if the operation has actually failed
+                if((operation.getError() != null) && (operation.getError().getErrors() != null)) {
+                    Errors error = operation.getError().getErrors().get(0);
+                    throw new IOException("Operation failed: " + error.getCode() + " - " + error.getMessage());
+                }
+                
+            } while((operation != null) && !DONE.endsWith(operation.getStatus()));
         }
     }
 
@@ -734,7 +763,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @param config
      * @param block
      * @throws IOException
-     * 
+     * TODO start VMs in parallel
      */
     @Override
     public boolean startInstance(List<VmConfig> configs, boolean block) throws IOException {
