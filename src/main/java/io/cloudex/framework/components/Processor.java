@@ -134,6 +134,7 @@ public class Processor extends CommonExecutable {
                 // now wait for any change in the metadata
                 log.info("Waiting for new instructions from the Coordinator");
 
+                // FIXME better solution for race condition
                 // avoid race condition
                 ApiUtils.block(2);
                 metaData = cloudService.getMetaData(false);

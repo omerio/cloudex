@@ -562,6 +562,8 @@ public class Coordinator extends CommonExecutable {
      */
     private IOException waitForProcessors(List<String> processors, String zoneId) throws IOException {
         IOException processorException = null;
+        
+        int retries = 0;
 
         // wait for the VMs to finish their loading
         for(String instanceId: processors) {   
@@ -584,6 +586,17 @@ public class Coordinator extends CommonExecutable {
                     
                 } catch(SocketTimeoutException e) {
                     log.warn("Timeout exception whilst waiting for processor metadata update", e);
+                
+                } catch(IOException e) {
+                    
+                    log.error("An exception occurred whilst waiting for processors", e);
+                    // retry 3 times
+                    if(retries == 3) {
+                        throw e;
+                    } else {
+                        
+                        retries++;
+                    }
                 }
 
             } while (!ready);
