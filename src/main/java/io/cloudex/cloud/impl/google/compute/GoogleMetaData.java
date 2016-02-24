@@ -88,6 +88,7 @@ public class GoogleMetaData {
     public static final String WRITE_APPEND = "WRITE_APPEND";
 
     public static final String TYPE_STRING = "STRING";
+    public static final String TYPE_INTEGER = "INTEGER";
 
     // API error reasons
     public static final String RATE_LIMIT_EXCEEDED = "rateLimitExceeded";
