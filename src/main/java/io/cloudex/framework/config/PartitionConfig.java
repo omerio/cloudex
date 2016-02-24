@@ -58,6 +58,8 @@ public class PartitionConfig implements Serializable    {
     private String output;
     
     private Integer count;
+    
+    private String countRef;
 
     /**
      * @return the type
@@ -144,13 +146,30 @@ public class PartitionConfig implements Serializable    {
     }
 
     /**
+     * Get the job context count reference
+     * @return the countRef
+     */
+    public String getCountRef() {
+        return countRef;
+    }
+
+    /**
+     * Set the job context count reference
+     * @param countRef the countRef to set
+     */
+    public void setCountRef(String countRef) {
+        this.countRef = countRef;
+    }
+
+    /**
      * Determine if this instance is valid
      * @return true if valid, false otherwise
      */
     public boolean valid() {
         
         return ObjectUtils.isValid(PartitionConfig.class, this) 
-                && ((PartitionType.COUNT.equals(this.type) && (this.count != null)) 
+                && ((PartitionType.COUNT.equals(this.type) && ((this.count != null) 
+                        || StringUtils.isNotBlank(this.countRef))) 
                 || ((PartitionType.ITEMS.equals(this.type) 
                         || (PartitionType.FUNCTION.equals(this.type) && StringUtils.isNotBlank(this.output)
                                 && BooleanUtils.xor(new boolean [] {StringUtils.isBlank(this.className), 
@@ -179,9 +198,10 @@ public class PartitionConfig implements Serializable    {
                 messages.add("either functionName or className is required");
             }
             
-        } else if(PartitionType.COUNT.equals(this.type) && (this.count == null)) {
+        } else if(PartitionType.COUNT.equals(this.type) 
+                && !BooleanUtils.xor(new boolean [] {this.count == null, StringUtils.isBlank(this.countRef)})) {
             
-            messages.add("count is required for Function type count");
+            messages.add("either count or countRef is required for Function type count");
         }
         
         if(!PartitionType.COUNT.equals(this.type)) {

@@ -626,7 +626,26 @@ public class Coordinator extends CommonExecutable {
         switch(partitionType) {
 
             case COUNT:
-                int count = partitionConfig.getCount();
+                int count = 0;
+                
+                if(partitionConfig.getCount() != null) {
+                    count = partitionConfig.getCount();
+                
+                } else {
+                    
+                    Object value = this.context.resolveValue(partitionConfig.getCountRef());
+                    
+                    Validate.notNull(value, "count reference is null or empty for task " + getTaskName(taskConfig));
+        
+                    if(!(value instanceof Double)) {
+                        throw new IllegalArgumentException("Expecting count reference of numeric type, found: " 
+                                + value);
+                    }
+        
+                    count = ((Double) value).intValue();
+                    
+                }
+                
                 items = new HashSet<>();
                 for(int i = 0; i < count; i++) {
                     items.add("Item" + i);

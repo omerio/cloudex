@@ -113,6 +113,30 @@ public class CoordinatorRunProcessorTaskTest {
         
         this.checkCost(config, coordinator);
     }
+    
+    /**
+     * Test method for {@link io.cloudex.framework.components.Coordinator#run()}.
+     * @throws IOException 
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskPartitionCountRef() throws IOException {
+
+        Job job = getJob("CoordinatorTest7.json");
+        VmConfig config = job.getVmConfig();
+        config.setCost(0.25);
+        config.setMinUsage(600L);
+        final CloudService service = getCloudService(config, 5).getMockInstance();
+        Coordinator coordinator = new Coordinator(job, service);        
+        Context context = populateContext(coordinator);
+        coordinator.run();
+        assertEquals(5, coordinator.getProcessors().size());
+
+        List<Partition> partitions = (List<Partition>) context.get("filePartitions");
+        assertNull(partitions);
+        
+        this.checkCost(config, coordinator);
+    }
 
     /**
      * Test method for {@link io.cloudex.framework.components.Coordinator#run()}.

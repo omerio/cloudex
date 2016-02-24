@@ -107,6 +107,17 @@ public class PartitionConfigTest {
     }
     
     @Test
+    public void testValidTypeCountRef() {
+        PartitionConfig config = new PartitionConfig();
+        //config.setFunctionName("TestFunction");
+        config.setType(PartitionType.COUNT);
+        config.setCountRef("#noOfProcessors");
+        
+        assertTrue(config.valid());
+        assertEquals(0, config.getValidationErrors().size());
+    }
+    
+    @Test
     public void testValidTypeCount() {
         PartitionConfig config = new PartitionConfig();
         //config.setFunctionName("TestFunction");
@@ -127,7 +138,8 @@ public class PartitionConfigTest {
         assertFalse(config.valid());
         System.out.println(config.getValidationErrors());
         assertEquals(1, config.getValidationErrors().size());
-        assertEquals("count is required for Function type count", config.getValidationErrors().get(0));
+        assertEquals("either count or countRef is required for Function type count", 
+                config.getValidationErrors().get(0));
     }
     
     @Test
