@@ -24,8 +24,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * Represents a column in a Big Data table
+ * TODO Add required
  * @author Omer Dawelbeit (omerio)
- *
+ * 
  */
 public class BigDataColumn {
     
