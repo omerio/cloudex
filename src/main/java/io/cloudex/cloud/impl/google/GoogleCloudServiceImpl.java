@@ -1050,7 +1050,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         List<TableFieldSchema> fields = new ArrayList<>();
         TableFieldSchema field;
         List<BigDataColumn> columns = table.getColumns();
-
+        // TODO add required
         for(BigDataColumn column: columns) {
             field = new TableFieldSchema();
             field.setName(column.getName());
@@ -1652,7 +1652,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         BigInteger totalRows = null;
         Long totalBytes = null;
         Integer numFields = null;
-
+        
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        
         try(PrintWriter writer = new PrintWriter(new FileOutputStream(filename))) {
 
             do {
@@ -1695,6 +1697,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
             } while((pageToken != null) && !BigInteger.ZERO.equals(totalRows));
         }
+        
+        log.debug("BigQuery query data saved successfully, timer: " + stopwatch);
+        
         return new QueryStats(totalRows, totalBytes);
     }
 
