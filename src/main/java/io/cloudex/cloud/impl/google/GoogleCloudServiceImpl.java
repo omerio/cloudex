@@ -812,7 +812,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             AttachedDiskInitializeParams params = new AttachedDiskInitializeParams();
             params.setDiskName(config.getInstanceId());
             params.setSourceImage(RESOURCE_BASE_URL + config.getImageId());
-            //params.setDiskSizeGb(diskSizeGb)
+            if(config.getDiskSize() != null) {
+                params.setDiskSizeGb(config.getDiskSize());
+            }
 
             disk.setAutoDelete(true).setBoot(true)
             .setDeviceName(config.getInstanceId())
