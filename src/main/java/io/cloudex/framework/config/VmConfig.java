@@ -69,6 +69,9 @@ public class VmConfig implements Serializable {
     @NotNull
     @Size(min = 1)
     private String diskType;
+    
+    // disk size in GB
+    private Long diskSize;
 
     private String startupScript;
 
@@ -282,6 +285,20 @@ public class VmConfig implements Serializable {
         this.reuse = reuse;
     }
 
+    /**
+     * @return the diskSize
+     */
+    public Long getDiskSize() {
+        return diskSize;
+    }
+
+    /**
+     * @param diskSize the diskSize to set
+     */
+    public void setDiskSize(Long diskSize) {
+        this.diskSize = diskSize;
+    }
+
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
@@ -299,6 +316,7 @@ public class VmConfig implements Serializable {
     public VmConfig copy() {
         VmConfig vmConfig = new VmConfig();
         vmConfig.setDiskType(this.diskType);
+        vmConfig.setDiskSize(this.diskSize);
         vmConfig.setImageId(this.imageId);
         vmConfig.setNetworkId(this.networkId);
         vmConfig.setStartupScript(this.startupScript);
@@ -346,6 +364,10 @@ public class VmConfig implements Serializable {
         
         if(StringUtils.isNotBlank(config.getZoneId())) {
             vmConfig.setZoneId(config.getZoneId());
+        }
+        
+        if(config.getDiskSize() != null) {
+            vmConfig.setDiskSize(this.diskSize);
         }
         
         if(config.getCores() != null) {
@@ -403,6 +425,7 @@ public class VmConfig implements Serializable {
         return new EqualsBuilder()
             //.appendSuper(super.equals(obj))
             .append(this.diskType, rhs.getDiskType())
+            .append(this.diskSize, rhs.getDiskSize())
             .append(this.imageId, rhs.getImageId())
             .append(this.networkId, rhs.getNetworkId())
             .append(this.startupScript, rhs.getStartupScript())
