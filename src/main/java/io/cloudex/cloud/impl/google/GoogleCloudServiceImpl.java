@@ -98,6 +98,7 @@ import com.google.api.client.http.InputStreamContent;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.BackOff;
+import com.google.api.client.util.Data;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.ErrorProto;
@@ -1686,9 +1687,19 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                     } else {
                         // multiple fields
                         for (TableRow row : rows) {
+                            
                             List<Object> fields = new ArrayList<>();
+                            
                             for (TableCell field : row.getF()) {
-                                fields.add(StringEscapeUtils.escapeCsv((String) field.getV()));
+                                
+                                if(Data.isNull(field.getV())) {
+                                    
+                                    fields.add("");
+                                    
+                                } else {
+                                    
+                                    fields.add(StringEscapeUtils.escapeCsv((String) field.getV()));
+                                }
                             }
                             writer.println(joiner.join(fields));		
                         }
