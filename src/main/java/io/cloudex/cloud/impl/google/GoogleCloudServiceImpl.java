@@ -1053,11 +1053,14 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         List<TableFieldSchema> fields = new ArrayList<>();
         TableFieldSchema field;
         List<BigDataColumn> columns = table.getColumns();
-        // TODO add required
+        
         for(BigDataColumn column: columns) {
             field = new TableFieldSchema();
             field.setName(column.getName());
             field.setType(column.getType());
+            if(column.isRequired()) {
+                field.setMode(GoogleMetaData.REQUIRED);
+            }
             fields.add(field);
         }
         schema.setFields(fields);

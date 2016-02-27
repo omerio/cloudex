@@ -89,6 +89,11 @@ public class GoogleMetaData {
 
     public static final String TYPE_STRING = "STRING";
     public static final String TYPE_INTEGER = "INTEGER";
+    
+    // BigQuery column modes
+    public static final String NULLABLE = "NULLABLE";
+    public static final String REQUIRED = "REQUIRED";
+    public static final String REPEATED = "REPEATED";
 
     // API error reasons
     public static final String RATE_LIMIT_EXCEEDED = "rateLimitExceeded";
