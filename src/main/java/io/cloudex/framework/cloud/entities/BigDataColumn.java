@@ -24,7 +24,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * Represents a column in a Big Data table
- * TODO Add required
+ * 
  * @author Omer Dawelbeit (omerio)
  * 
  */
@@ -33,6 +33,8 @@ public class BigDataColumn {
     private String name;
     
     private String type;
+    
+    private boolean required;
 
     /**
      * 
@@ -49,6 +51,18 @@ public class BigDataColumn {
         super();
         this.name = name;
         this.type = type;
+    }
+    
+    /**
+     * @param name - the column name
+     * @param type - the column type
+     * @param required - the column mode, if required or not
+     */
+    public BigDataColumn(String name, String type, boolean required) {
+        super();
+        this.name = name;
+        this.type = type;
+        this.required = required;
     }
 
     /**
@@ -79,6 +93,20 @@ public class BigDataColumn {
         this.type = type;
     }
     
+    /**
+     * @return the required
+     */
+    public boolean isRequired() {
+        return required;
+    }
+
+    /**
+     * @param required the required to set
+     */
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
@@ -87,6 +115,7 @@ public class BigDataColumn {
         return new ToStringBuilder(this)
             .append("name", name)
             .append("type", type)
+            .append("required", required)
             .toString();
     }
 

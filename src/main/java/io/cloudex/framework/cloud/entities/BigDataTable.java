@@ -61,12 +61,12 @@ public class BigDataTable {
      * @param name - the column name
      * @param type - the column type
      */
-    public void addColumn(String name, String type) {
+    public void addColumn(String name, String type, boolean required) {
         if(this.columns == null) {
             this.columns = new ArrayList<>();
         }
         
-        this.columns.add(new BigDataColumn(name, type));
+        this.columns.add(new BigDataColumn(name, type, required));
     }
 
     /**
