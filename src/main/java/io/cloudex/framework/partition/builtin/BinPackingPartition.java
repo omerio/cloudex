@@ -74,7 +74,7 @@ public class BinPackingPartition implements PartitionFunction {
     }
 
     /**
-     * @param items
+     * @param items - the items to partition
      */
     public BinPackingPartition(List<Item> items) {
         super();
@@ -157,14 +157,44 @@ public class BinPackingPartition implements PartitionFunction {
             }
             bin.calculateScale();
         }
-
-        // FIXME this needs to change to at least try to spread the remaining items equally!
-        //add anything that is remaining to the last set
-        if(!items.isEmpty()) {
+        
+        /*if(!items.isEmpty()) {
             bins.get(bins.size() - 1).addAll(items);
             items.clear();
-        }
+        }*/
 
+        // spread out remaining items, this approximate
+        if(!items.isEmpty()) {
+            //bins.get(bins.size() - 1).addAll(items);
+            //items.clear();
+            
+            // items are in descending order
+            // sort partitions in ascending order
+            Collections.sort(bins);
+            
+            Partition smallest;
+            long largestSum = bins.get(bins.size() - 1).sum();
+            int index = 0;
+            do {
+                
+                smallest = bins.get(index);
+                
+                // spread the remaining items into the bins, largest item into smallest bin
+                for(int i = 0; i < items.size(); i++) {
+                                        
+                    smallest.add(items.remove(i));
+                    
+                    if(smallest.sum() > largestSum) {
+                        break;
+                    }
+                }
+                
+                index++;
+                
+            } while (!items.isEmpty());
+            
+            items.clear();
+        }
 
         return bins;
 

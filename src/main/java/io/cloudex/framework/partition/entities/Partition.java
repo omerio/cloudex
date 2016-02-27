@@ -32,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Omer Dawelbeit (omerio)
  *
  */
-public class Partition {
+public class Partition implements Comparable<Partition>   {
     
     private static final Log log = LogFactory.getLog(Partition.class);
 
@@ -182,6 +182,11 @@ public class Partition {
         .append("scale", scale)
         .append("items", items)
         .toString();
+    }
+    
+    @Override
+    public int compareTo(Partition partition) {
+        return this.sum().compareTo(partition.sum());
     }
 
 
