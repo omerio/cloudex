@@ -120,80 +120,97 @@ public class BinPackingPartition implements PartitionFunction {
             max = (long) Math.ceil(sum / (float) this.numberOfBins);
         }
 
-        // Mix of First Fit Decreasing (FFD) strategy and Full Bin strategy
         List<Partition> bins = new ArrayList<>();
-        for(int i = 0; i < this.numberOfBins; i++) {
+        
+        if(this.numberOfBins == 1) {
+            
             Partition bin = new Partition();
             bins.add(bin);
+            bin.addAll(items);
+            items.clear();
 
-            // check if we have ran out of items
-            if(!items.isEmpty()) {
+        } else {
 
-                Item largestItem = items.get(0);
+            // Mix of First Fit Decreasing (FFD) strategy and Full Bin strategy
+            for(int i = 0; i < this.numberOfBins; i++) {
+                Partition bin = new Partition();
+                bins.add(bin);
 
-                bin.add(largestItem);
-                items.remove(largestItem);
+                // check if we have ran out of items
+                if(!items.isEmpty()) {
 
-                Long currentSum = bin.sum();
+                    Item largestItem = items.get(0);
 
-                if(currentSum < max) {
-                    Long diff = max - currentSum;
-                    for(int j = 0; j < items.size(); j++) {
-                        Item item = items.get(j);
-                        if(item.getWeight() <= diff) {
+                    bin.add(largestItem);
+                    items.remove(largestItem);
 
-                            bin.add(item);
-                            items.remove(j);
+                    Long currentSum = bin.sum();
 
-                            if(item.getWeight() == diff) {
-                                break;
-                            } else {
-                                // look for an even small number to fill the gap
-                                diff = max - bin.sum();
-                            }
-                        } 
+                    if(currentSum < max) {
+                        Long diff = max - currentSum;
+                        List<Item> toRemove = new ArrayList<>();
+
+                        for(Item item: items) {
+                            //Item item = items.get(j);
+                            if(item.getWeight() <= diff) {
+
+                                bin.add(item);
+                                toRemove.add(item);
+
+                                if(item.getWeight() == diff) {
+                                    break;
+                                } else {
+                                    // look for an even small number to fill the gap
+                                    diff = max - bin.sum();
+                                }
+                            } 
+                        }
+
+                        items.removeAll(toRemove);
+
                     }
                 }
+                bin.calculateScale();
             }
-            bin.calculateScale();
-        }
-        
-        /*if(!items.isEmpty()) {
+
+            /*if(!items.isEmpty()) {
             bins.get(bins.size() - 1).addAll(items);
             items.clear();
         }*/
 
-        // spread out remaining items, this approximate
-        if(!items.isEmpty()) {
-            //bins.get(bins.size() - 1).addAll(items);
-            //items.clear();
-            
-            // items are in descending order
-            // sort partitions in ascending order
-            Collections.sort(bins);
-            
-            Partition smallest;
-            long largestSum = bins.get(bins.size() - 1).sum();
-            int index = 0;
-            do {
-                
-                smallest = bins.get(index);
-                
-                // spread the remaining items into the bins, largest item into smallest bin
-                for(int i = 0; i < items.size(); i++) {
-                                        
-                    smallest.add(items.remove(i));
-                    
-                    if(smallest.sum() > largestSum) {
-                        break;
+            // spread out remaining items, this approximate
+            if(!items.isEmpty()) {
+                //bins.get(bins.size() - 1).addAll(items);
+                //items.clear();
+
+                // items are in descending order
+                // sort partitions in ascending order
+                Collections.sort(bins);
+
+                Partition smallest;
+                long largestSum = bins.get(bins.size() - 1).sum();
+                int index = 0;
+                do {
+
+                    smallest = bins.get(index);
+
+                    // spread the remaining items into the bins, largest item into smallest bin
+                    for(int i = 0; i < items.size(); i++) {
+
+                        smallest.add(items.remove(i));
+
+                        if(smallest.sum() > largestSum) {
+                            break;
+                        }
                     }
-                }
-                
-                index++;
-                
-            } while (!items.isEmpty());
-            
-            items.clear();
+
+                    index++;
+
+                } while (!items.isEmpty());
+
+                items.clear();
+            }
+
         }
 
         return bins;

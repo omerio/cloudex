@@ -156,10 +156,16 @@ public class BinPackingPartitionTest {
     
     @Test
     public void testSetBinCapacityApproximatelyEqualCapacity() {
+        setBinCapacityApproximatelyEqualCapacity(32, 9, 226881280L);
+        setBinCapacityApproximatelyEqualCapacity(1, 276, 7260200953L);
+    }
+    
+    
+    private void setBinCapacityApproximatelyEqualCapacity(int numBins, int maxItemsPerBin, long maxWeightPerBin) {
         BinPackingPartition function = new BinPackingPartition(this.createManyItems()); 
-        int numBins = 32;
+       
         
-        function.setMaxBinItems(226881280L);
+        function.setMaxBinItems(maxWeightPerBin);
         List<Partition> bins = function.partition();
         // unique files
         Set<String> files = new HashSet<>();
@@ -179,7 +185,7 @@ public class BinPackingPartitionTest {
                 
             }
             
-            assertTrue(bin.getItems().size() <= 9);
+            assertTrue(bin.getItems().size() <= maxItemsPerBin);
         }
         
         // ensure number of bins
@@ -200,8 +206,16 @@ public class BinPackingPartitionTest {
     
     @Test
     public void testSetNumberOfBinsApproximatelyEqualCapacity() {
+        setNumberOfBinsApproximatelyEqualCapacity(16, 18);
+        setNumberOfBinsApproximatelyEqualCapacity(2, 135);
+        setNumberOfBinsApproximatelyEqualCapacity(1, 267);
+        setNumberOfBinsApproximatelyEqualCapacity(300, 267);
+    }
+    
+    
+    private void setNumberOfBinsApproximatelyEqualCapacity(int numBins, int maxItemsPerBin) {
         BinPackingPartition function = new BinPackingPartition(this.createManyItems()); 
-        int numBins = 16;
+        
         
         function.setNumberOfBins(numBins);
         List<Partition> bins = function.partition();
@@ -223,7 +237,7 @@ public class BinPackingPartitionTest {
                 
             }
             
-            assertTrue(bin.getItems().size() <= 18);
+            assertTrue(bin.getItems().size() <= maxItemsPerBin);
         }
         
         // ensure number of bins
