@@ -1750,7 +1750,8 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         QueryStats stats = null;
         
         if(rows == null) {
-            throw new IllegalArgumentException("Unexpected null rows");
+            //throw new IllegalArgumentException("Unexpected null rows");
+            rows = 0L;
         }
         
         log.debug("Downloading " + rows + " rows from BigQuery for jobId: " + jobId);
