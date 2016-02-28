@@ -102,9 +102,11 @@ import com.google.api.client.util.Data;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.ErrorProto;
+import com.google.api.services.bigquery.model.ExplainQueryStage;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobConfiguration;
+import com.google.api.services.bigquery.model.JobConfigurationExtract;
 import com.google.api.services.bigquery.model.JobConfigurationLoad;
 import com.google.api.services.bigquery.model.JobConfigurationQuery;
 import com.google.api.services.bigquery.model.JobReference;
@@ -1185,6 +1187,18 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         return completedIds;
 
     }
+    
+    /**
+     * Return the name of the table and it's dataset i.e.
+     * mydataset.mytable returns [mydataset, mytable]
+     * @param table
+     * @return
+     */
+    private String [] getTableAndDatasetNames(String table) {
+        Validate.notNull(table);
+        
+        return StringUtils.split(table, '.');
+    }
 
     /**
      * Stream triple data into big query
@@ -1196,11 +1210,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     @Override
     public void streamObjectsIntoBigData(Collection<? extends BigQueryStreamable> objects, BigDataTable table) throws IOException {
 
-        Validate.notNull(table.getName());
-
         Stopwatch stopwatch = Stopwatch.createStarted();
 
-        String [] names = StringUtils.split(table.getName(), '.');
+        String [] names = getTableAndDatasetNames(table.getName());
 
         String datasetId = names[0];
         String tableId = names[1];
@@ -1398,7 +1410,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         return jobRef.getJobId();
     }
-
+    
     /**
      * Polls the status of a BigQuery job, returns Job reference if "Done"
      * This method will block until the job status is Done
@@ -1407,6 +1419,20 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException
      */
     protected String checkBigQueryJobResults(String jobId, boolean retry, boolean throwError) throws IOException {
+        
+        Job pollJob = this.waitForBigQueryJobResults(jobId, retry, throwError);
+        
+        return pollJob.getJobReference().getJobId();
+    }
+
+    /**
+     * Polls the status of a BigQuery job, returns Job reference if "Done"
+     * This method will block until the job status is Done
+     * @param jobId     a reference to an inserted query Job
+     * @return a reference to the completed Job
+     * @throws IOException
+     */
+    protected Job waitForBigQueryJobResults(String jobId, boolean retry, boolean throwError) throws IOException {
         // Variables to keep track of total query time
         Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -1433,13 +1459,13 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         stopwatch.stop();
 
-        String completedJobId = pollJob.getJobReference().getJobId();
+        //String completedJobId = pollJob.getJobReference().getJobId();
 
         log.debug("Job completed successfully" + pollJob.toPrettyString());
         this.printJobStats(pollJob);
 
         if(retry && (pollJob.getStatus().getErrorResult() != null)) {
-            completedJobId = this.retryFailedBigQueryJob(pollJob);
+            pollJob = this.retryFailedBigQueryJob(pollJob);
         }
 
         if(throwError && (pollJob.getStatus().getErrorResult() != null)) {
@@ -1448,7 +1474,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             throw new IOException("message: " + error.getMessage() + ", reason: " + error.getReason());
         }
 
-        return completedJobId;
+        return pollJob;
     }
 
     /**
@@ -1520,12 +1546,12 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 		}
      * @throws IOException 
      */
-    protected String retryFailedBigQueryJob(Job job) throws IOException {
+    protected Job retryFailedBigQueryJob(Job job) throws IOException {
         String jobId = job.getJobReference().getJobId();
         log.debug("Retrying failed job: " + jobId);
         log.debug("Error result" + job.getStatus().getErrorResult());
         JobConfiguration config = job.getConfiguration();
-        String newCompletedJobId = null;
+        //String newCompletedJobId = null;
         if((config != null) && (config.getQuery() != null)) {
             // get the query
             String query = config.getQuery().getQuery();
@@ -1533,9 +1559,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             ApiUtils.block(this.getApiRecheckDelay());
             String newJobId = startBigDataQuery(query);
             ApiUtils.block(this.getApiRecheckDelay());
-            newCompletedJobId = checkBigQueryJobResults(newJobId, false, false);
+            job = waitForBigQueryJobResults(newJobId, false, false);
         }
-        return newCompletedJobId;
+        return job;
     }
 
     /**
@@ -1570,6 +1596,51 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         } catch(Exception e) {
             log.warn("failed to log job stats", e);
         }
+    }
+    
+    /**
+     * Find the records written from the job statistics
+     * "queryPlan" : [ {
+        "computeRatioAvg" : 0.8558157510920105,
+        "computeRatioMax" : 1.0,
+        "id" : "1",
+        "name" : "Stage 1",
+        "readRatioAvg" : 0.06898310223119479,
+        "readRatioMax" : 0.08398906138792274,
+        "recordsRead" : "14936600",
+        "recordsWritten" : "8091263",
+        "steps" : [ {
+          "kind" : "READ",
+          "substeps" : [ "object, predicate, subject", "FROM ontologies.swetodblp1", "WHERE LOGICAL_OR(LOGICAL_AND(EQUAL(predicate, 0), ...), ...)" ]
+        }, {
+          "kind" : "WRITE",
+          "substeps" : [ "object, predicate, subject", "TO __output" ]
+        } ],
+        "waitRatioAvg" : 0.013799600438590943,
+        "waitRatioMax" : 0.013799600438590943,
+        "writeRatioAvg" : 0.3758086421588464,
+        "writeRatioMax" : 0.49154118427586363
+      } ],
+     * 
+     * @param job
+     * @return
+     */
+    protected Long getBigQueryResultRows(Job job) {
+        Long rows = null;
+        if(job.getStatistics() != null && 
+                job.getStatistics().getQuery() != null &&
+                job.getStatistics().getQuery().getQueryPlan() != null) {
+            
+            List<ExplainQueryStage> explains = job.getStatistics().getQuery().getQueryPlan();
+            
+            if(explains.size() > 0) {
+                ExplainQueryStage stage = explains.get(0);
+                rows = stage.getRecordsWritten();
+            }
+            
+        }
+        
+        return rows;
     }
 
     /**
@@ -1642,17 +1713,127 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         return queryResults;
     }
+    
+    /**
+     * A job that extracts data from a table.
+     * @param bigquery Bigquery service to use
+     * @param cloudStoragePath Cloud storage bucket we are inserting into
+     * @param table Table to extract from
+     * @return The job to extract data from the table
+     * @throws IOException Thrown if error connceting to Bigtable
+     */
+    // [START extract_job]
+    protected Job runBigQueryExtractJob(final String cloudStoragePath, final TableReference table) throws IOException {
+        
+        log.debug("Saving table: " + table + ", to cloud storage file: " + cloudStoragePath);
+        
+        //https://cloud.google.com/bigquery/exporting-data-from-bigquery
+        JobConfigurationExtract extract = new JobConfigurationExtract()
+            .setSourceTable(table)
+            .setDestinationFormat("CSV")
+            .setCompression("GZIP")
+            .setDestinationUri(cloudStoragePath);
 
+        return this.getBigquery().jobs().insert(table.getProjectId(),
+                new Job().setConfiguration(new JobConfiguration().setExtract(extract)))
+                .setOauthToken(this.getOAuthToken())
+                .execute();
+    }
+    
+
+
+    @Override
+    public QueryStats saveBigQueryResultsToFile(String jobId, String filename, String bucket, int directDownloadRowLimit) throws IOException {
+        
+        Job queryJob = this.waitForBigQueryJobResults(jobId, true, false);
+        Long rows = this.getBigQueryResultRows(queryJob);
+        QueryStats stats = null;
+        
+        if(rows == null) {
+            throw new IllegalArgumentException("Unexpected null rows");
+        }
+        
+        log.debug("Downloading " + rows + " rows from BigQuery for jobId: " + jobId);
+        
+        if(rows > directDownloadRowLimit) {
+            
+            stats = this.saveBigQueryResultsToCloudStorage(jobId, queryJob, bucket, filename);
+            
+        } else {
+            
+            stats = this.saveBigQueryResultsToFile(jobId, queryJob, FileUtils.TEMP_FOLDER + filename);
+        }
+        
+        return stats;
+    }
+    
+    @Override
+    public QueryStats saveBigQueryResultsToCloudStorage(String jobId, String bucket, String filename) throws IOException {
+        return this.saveBigQueryResultsToCloudStorage(jobId, null, bucket, filename);
+    }
+    
+    
+    protected QueryStats saveBigQueryResultsToCloudStorage(String jobId, Job queryJob, String bucket, String filename) throws IOException {
+        
+        // wait for the query job to complete
+        if(queryJob == null) {
+            queryJob = this.waitForBigQueryJobResults(jobId, true, false);
+        }
+                
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        
+        QueryStats stats = new QueryStats();
+        
+        // get the temporary table details
+        TableReference table = queryJob.getConfiguration().getQuery().getDestinationTable();
+        
+        if(queryJob.getStatistics() != null) {
+            stats.setTotalProcessedBytes(queryJob.getStatistics().getTotalBytesProcessed());
+            Long rows = this.getBigQueryResultRows(queryJob);
+            if(rows != null) {
+                stats.setTotalRows(BigInteger.valueOf(rows));
+            }
+        }
+        
+        String cloudStoragePath = CLOUD_STORAGE_PREFIX + bucket + "/" + filename;
+        
+        String localFile = FileUtils.TEMP_FOLDER + filename;
+        
+        Job extractJob = runBigQueryExtractJob(cloudStoragePath, table);
+        
+        extractJob = this.waitForBigQueryJobResults(extractJob.getJobReference().getJobId(), false, true);
+        
+        log.debug("Downloading query results file from cloud storage");
+        
+        this.downloadObjectFromCloudStorage(filename, localFile, bucket);
+        
+        log.debug("BigQuery query data saved successfully, timer: " + stopwatch);
+        
+        return stats;
+    }
+
+    @Override
+    public QueryStats saveBigQueryResultsToFile(String jobId, String filename) throws IOException {
+        return this.saveBigQueryResultsToFile(jobId, null, filename);
+    }
+    
     /**
      * Polls a big data job and once done save the results to a file
      * @param jobId
      * @param filename
      * @throws IOException
+     * FIXME rename to saveBigDataResultsToFile
      */
-    @Override
-    public QueryStats saveBigQueryResultsToFile(String jobId, String filename) throws IOException {
+    public QueryStats saveBigQueryResultsToFile(String jobId, Job queryJob, String filename) throws IOException {
         // query with retry support
-        String completedJob = checkBigQueryJobResults(jobId, true, false);
+        String completedJob;
+        
+        if(queryJob == null) {
+            completedJob = checkBigQueryJobResults(jobId, true, false);
+        } else {
+            completedJob = queryJob.getJobReference().getJobId();
+        }
+        
         Joiner joiner = Joiner.on(',');
         String pageToken = null;
         BigInteger totalRows = null;
@@ -1870,6 +2051,5 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         this.authenticationProvider = provider;
         
     }
-
 
 }
