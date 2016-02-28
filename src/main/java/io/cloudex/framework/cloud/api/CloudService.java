@@ -210,12 +210,38 @@ public interface CloudService {
     public String startBigDataQuery(String querySql) throws IOException;
 
     /**
+     * TODO rename to BigData
      * Polls a big data job and once done save the results to a file
      * @param jobId - the id of a previous big data job
      * @param filename - the destination filename
      * @throws IOException if any of the cloud api calls fail
      */
     public QueryStats saveBigQueryResultsToFile(String jobId, String filename) throws IOException;
+    
+    
+    /**
+     * TODO rename to BigData
+     * Polls a big data job and once done save the results to a file
+     * @param jobId - the id of a previous big data job
+     * @param filename - the destination filename
+     * @param bucket - the cloud storage bucket
+     * @param directDownloadRowLimit - the limit to use for direct download, large than this limit 
+     *          will use export to cloud storage
+     * @throws IOException if any of the cloud api calls fail
+     */
+    public QueryStats saveBigQueryResultsToFile(String jobId, String filename, String bucket, 
+            int directDownloadRowLimit) throws IOException;
+    
+    /**
+     * TODO rename to BigData
+     * Polls a big data job and once done exports the results to a cloud storage file then download it
+     * @param jobId - the id of a previous big data job
+     * @param filename - the destination filename
+     * @param bucket - the cloud storage bucket
+     * @throws IOException if any of the cloud api calls fail
+     */
+    public QueryStats saveBigQueryResultsToCloudStorage(String jobId, String bucket, String filename) 
+            throws IOException;
     
     // ----- Generic cloud provider specific configurations
     
