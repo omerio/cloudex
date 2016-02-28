@@ -457,9 +457,9 @@ public class Coordinator extends CommonExecutable {
 
         }
         
+        // wait for the metadata operations to complete
         if(!operations.isEmpty()) {
-            // block and wait for the meta data operations to complete
-            cloudService.blockOnComputeOperations(operations, zoneId);
+            this.waitForOperations(operations, zoneId);
         }
 
         if(!taskUsesCustomVms || (taskUsesCustomVms && !Boolean.FALSE.equals(taskConfig.getVmConfig().getReuse()))) {
@@ -551,6 +551,40 @@ public class Coordinator extends CommonExecutable {
         this.getCloudService().uploadFileToCloudStorage(itemFile, bucket);
         // update the meta data with the file value
         metaData.addUserValue(itemMetaDataKey + VmMetaData.LONG_METADATA_FILE_Suffix, itemFilename);
+    }
+    
+    /**
+     * Wait for the cloud operations to complete
+     * @param operations - the reference of the operations to check
+     * @param zoneId - the cloud provider zoneId
+     * @throws IOException IOException if the cloud api calls fail
+     */
+    private void waitForOperations(List<String> operations, String zoneId) throws IOException {
+        boolean success = false;
+        int retries = 0;
+        // block and wait for the meta data operations to complete
+        do {
+            try {
+                this.getCloudService().blockOnComputeOperations(operations, zoneId);
+                
+                success = true;
+                
+            } catch(IOException e) {
+                
+                log.error("Exception whilst waiting for operations completion", e);
+                
+                // retry 3 times
+                if(retries == 3) {
+                    throw e;
+                    
+                } else {
+                    
+                    retries++;
+                }
+            }
+            
+        } while(success == false);
+        
     }
 
     /**
