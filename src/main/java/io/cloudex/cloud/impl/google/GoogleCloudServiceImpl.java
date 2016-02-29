@@ -530,6 +530,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @param bucket
      * @param callback
      * @throws IOException
+     * TODO Parallel/Multi download
      */
     @Override
     public void downloadObjectFromCloudStorage(String object, final String outFile, 
@@ -1781,15 +1782,10 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         Job queryJob = this.waitForBigQueryJobResults(jobId, false, true);
         Long rows = this.getBigQueryResultRows(queryJob);
         QueryStats stats = null;
-        
-        if(rows == null) {
-            //throw new IllegalArgumentException("Unexpected null rows");
-            rows = 0L;
-        }
-        
+                
         log.debug("Downloading " + rows + " rows from BigQuery for jobId: " + jobId);
         
-        if(rows > directDownloadRowLimit) {
+        if((rows == null) || (rows > directDownloadRowLimit)) {
             
             stats = this.saveBigQueryResultsToCloudStorage(jobId, queryJob, bucket, filename);
             
@@ -1829,17 +1825,39 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             }
         }
         
-        String cloudStoragePath = CLOUD_STORAGE_PREFIX + bucket + "/" + filename;
-        
-        String localFile = FileUtils.TEMP_FOLDER + filename;
+        // use single wildcard URI
+        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_*
+        String cloudStoragePath = CLOUD_STORAGE_PREFIX + bucket + "/" + filename + "_*";
         
         Job extractJob = runBigQueryExtractJob(cloudStoragePath, table);
         
         extractJob = this.waitForBigQueryJobResults(extractJob.getJobReference().getJobId(), false, true);
+
+        // list the relevant export files in cloud storage i.e.
+        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_000000000000   
+        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_000000000001    
+        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_000000000002
+        List<io.cloudex.framework.cloud.entities.StorageObject> objects = this.listCloudStorageObjects(bucket);
         
-        log.debug("Downloading query results file from cloud storage");
+        List<String> files = new ArrayList<>();
         
-        this.downloadObjectFromCloudStorage(filename, localFile, bucket);
+        for(io.cloudex.framework.cloud.entities.StorageObject object: objects) {
+            String name = object.getName();
+            if(name.startsWith(filename)) {
+                files.add(name);
+            }
+        }
+        
+        for(String file: files) {
+
+            log.debug("Downloading query results file: " + file);
+            
+            String localFile = FileUtils.TEMP_FOLDER + file;
+            
+            this.downloadObjectFromCloudStorage(file, localFile, bucket);
+            
+            stats.getOutputFiles().add(localFile);
+        }
         
         log.debug("BigQuery query data saved successfully, timer: " + stopwatch);
         
@@ -1931,7 +1949,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         
         log.debug("BigQuery query data saved successfully, timer: " + stopwatch);
         
-        return new QueryStats(totalRows, totalBytes);
+        QueryStats stats = new QueryStats(totalRows, totalBytes);
+        stats.getOutputFiles().add(filename);
+        return stats;
     }
 
 
