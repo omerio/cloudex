@@ -1409,7 +1409,8 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         // a temp table
         if(table != null) {
             String [] names = this.getTableAndDatasetNames(table.getName());
-            String tempTable = names[1] + '_' + instanceId + '_' + System.currentTimeMillis();            
+            String insId = StringUtils.replace(instanceId, "-", "_");
+            String tempTable = names[1] + '_' + insId + '_' + System.currentTimeMillis();            
             
             TableReference tableRef = (new TableReference())
                     .setProjectId(this.projectId)
@@ -1586,7 +1587,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                     (config.getQuery().getDestinationTable() != null)) {
                 
                 TableReference tableRef = config.getQuery().getDestinationTable();
-                table = new BigDataTable(tableRef.getDatasetId() + '.' + tableRef.getTableId()); 
+                table = new BigDataTable(tableRef.getDatasetId() + '.' + StringUtils.split(tableRef.getTableId(), '_')[0]); 
             }
             
             String newJobId = startBigDataQuery(query, table);
@@ -1777,7 +1778,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     @Override
     public QueryStats saveBigQueryResultsToFile(String jobId, String filename, String bucket, int directDownloadRowLimit) throws IOException {
         
-        Job queryJob = this.waitForBigQueryJobResults(jobId, true, false);
+        Job queryJob = this.waitForBigQueryJobResults(jobId, false, true);
         Long rows = this.getBigQueryResultRows(queryJob);
         QueryStats stats = null;
         
