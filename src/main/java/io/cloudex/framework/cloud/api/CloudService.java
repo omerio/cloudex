@@ -239,11 +239,12 @@ public interface CloudService {
      * @param jobId - the id of a previous big data job
      * @param filename - the destination filename
      * @param bucket - the cloud storage bucket
+     * @param minFiles - the minimum number of files to create
      * @param directDownloadRowLimit - the limit to use for direct download, large than this limit 
      *          will use export to cloud storage
      * @throws IOException if any of the cloud api calls fail
      */
-    public QueryStats saveBigQueryResultsToFile(String jobId, String filename, String bucket, 
+    public QueryStats saveBigQueryResultsToFile(String jobId, String filename, String bucket, Integer minFiles,
             int directDownloadRowLimit) throws IOException;
     
     /**
