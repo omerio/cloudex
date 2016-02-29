@@ -200,14 +200,28 @@ public interface CloudService {
     public List<String> loadLocalFilesIntoBigData(List<String> files, BigDataTable table, boolean createTable) 
             throws IOException;
 
+    
     /**
      * Creates an asynchronous Query Job for a particular query on a dataset
      *
      * @param querySql  the actual query string
+     * @param table the table being queried
      * @return a reference to the inserted query job
      * @throws IOException if any of the cloud api calls fail
      */
     public String startBigDataQuery(String querySql) throws IOException;
+    
+    /**
+     * Creates an asynchronous Query Job for a particular query on a dataset. If a table is supplied
+     * then large results are stored in a new temporary table with the table name driven from the
+     * supplied table
+     *
+     * @param querySql  the actual query string
+     * @param table the table being queried
+     * @return a reference to the inserted query job
+     * @throws IOException if any of the cloud api calls fail
+     */
+    public String startBigDataQuery(String querySql, BigDataTable table) throws IOException;
 
     /**
      * TODO rename to BigData
