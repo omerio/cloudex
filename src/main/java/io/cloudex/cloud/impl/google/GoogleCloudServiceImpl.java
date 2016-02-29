@@ -81,6 +81,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -1136,11 +1137,10 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         .parseArrayAndClose(schema.getFields(), TableFieldSchema.class, null);
         schema.setFactory(JACKSON);*/
 
-        Validate.notNull(table.getName());
-
         Stopwatch stopwatch = Stopwatch.createStarted();
 
-        String [] names = StringUtils.split(table.getName(), '.');
+        String [] names = getTableAndDatasetNames(table.getName());
+        
         TableReference tableRef = (new TableReference())
                 .setProjectId(this.projectId)
                 .setDatasetId(names[0])
@@ -1376,6 +1376,13 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         }
     }
 
+    @Override
+    public String startBigDataQuery(String querySql) throws IOException {
+        
+        return this.startBigDataQuery(querySql, null);
+        
+    }
+    
     /**
      * Creates an asynchronous Query Job for a particular query on a dataset
      *
@@ -1386,7 +1393,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException
      */
     @Override
-    public String startBigDataQuery(String querySql) throws IOException {
+    public String startBigDataQuery(String querySql, BigDataTable table) throws IOException {
 
         log.debug("Inserting Query Job: " + querySql);
 
@@ -1397,6 +1404,21 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         job.setConfiguration(config);
         queryConfig.setQuery(querySql);
+        
+        // if a table is provided then set the large results to true and supply
+        // a temp table
+        if(table != null) {
+            String [] names = this.getTableAndDatasetNames(table.getName());
+            String tempTable = names[1] + '_' + instanceId + '_' + System.currentTimeMillis();            
+            
+            TableReference tableRef = (new TableReference())
+                    .setProjectId(this.projectId)
+                    .setDatasetId(names[0])
+                    .setTableId(tempTable);
+            
+            queryConfig.setAllowLargeResults(true);
+            queryConfig.setDestinationTable(tableRef);
+        }
 
         com.google.api.services.bigquery.Bigquery.Jobs.Insert insert = 
                 this.getBigquery().jobs().insert(projectId, job);
@@ -1557,7 +1579,17 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             String query = config.getQuery().getQuery();
             // re-execute the query
             ApiUtils.block(this.getApiRecheckDelay());
-            String newJobId = startBigDataQuery(query);
+            
+            BigDataTable table = null;
+            
+            if(BooleanUtils.isTrue(config.getQuery().getAllowLargeResults()) && 
+                    (config.getQuery().getDestinationTable() != null)) {
+                
+                TableReference tableRef = config.getQuery().getDestinationTable();
+                table = new BigDataTable(tableRef.getDatasetId() + '.' + tableRef.getTableId()); 
+            }
+            
+            String newJobId = startBigDataQuery(query, table);
             ApiUtils.block(this.getApiRecheckDelay());
             job = waitForBigQueryJobResults(newJobId, false, false);
         }
@@ -1704,7 +1736,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                     throw e;
                 }
                 int delay = this.getApiRecheckDelay();
-                log.debug("Retrying again in" + delay + " seconds");
+                log.debug("Retrying again in " + delay + " seconds");
                 ApiUtils.block(delay);
                 retrying = true;
             }
