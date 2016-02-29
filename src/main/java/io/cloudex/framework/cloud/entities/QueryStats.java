@@ -21,9 +21,12 @@ package io.cloudex.framework.cloud.entities;
 import io.cloudex.framework.utils.FileUtils;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Represent a big data query stats such as number of rows and total bytes processes
+ * Represent a big data query stats such as number of rows, total bytes processes and 
+ * the output files for the query output if any
  * @author Omer Dawelbeit (omerio)
  *
  */
@@ -32,6 +35,8 @@ public class QueryStats {
     private BigInteger totalRows;
 
     private Long totalProcessedBytes;
+    
+    private List<String> outputFiles = new ArrayList<>();
 
     public QueryStats() {
         super();
@@ -85,6 +90,20 @@ public class QueryStats {
             gb = ((double) this.totalProcessedBytes / FileUtils.ONE_GB);
         }
         return gb;
+    }
+
+    /**
+     * @return the outputFiles
+     */
+    public List<String> getOutputFiles() {
+        return outputFiles;
+    }
+
+    /**
+     * @param outputFiles the outputFiles to set
+     */
+    public void setOutputFiles(List<String> outputFiles) {
+        this.outputFiles = outputFiles;
     }
 
 
