@@ -96,6 +96,7 @@ public class GoogleMetaData {
     public static final String REPEATED = "REPEATED";
     
     public static final String TEMP_TABLE = "temp_table";
+    public static final String WILDCARD_SUFFIX = "_*";
 
     // API error reasons
     public static final String RATE_LIMIT_EXCEEDED = "rateLimitExceeded";

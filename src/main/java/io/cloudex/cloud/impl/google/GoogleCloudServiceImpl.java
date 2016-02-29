@@ -42,6 +42,7 @@ import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.RESOURCE_BASE_
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.SCOPES;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.SERVICE_ACCOUNTS;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.WAIT_FOR_CHANGE;
+import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.WILDCARD_SUFFIX;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.WRITE_APPEND;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.ZONE;
 import static io.cloudex.cloud.impl.google.compute.GoogleMetaData.ZONES;
@@ -1757,16 +1758,16 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException Thrown if error connceting to Bigtable
      */
     // [START extract_job]
-    protected Job runBigQueryExtractJob(final String cloudStoragePath, final TableReference table) throws IOException {
+    protected Job runBigQueryExtractJob(final List<String> cloudStorageUris, final TableReference table) throws IOException {
         
-        log.debug("Saving table: " + table + ", to cloud storage file: " + cloudStoragePath);
+        log.debug("Saving table: " + table + ", to cloud storage files: " + cloudStorageUris);
         
         //https://cloud.google.com/bigquery/exporting-data-from-bigquery
         JobConfigurationExtract extract = new JobConfigurationExtract()
             .setSourceTable(table)
             .setDestinationFormat("CSV")
             .setCompression("GZIP")
-            .setDestinationUri(cloudStoragePath);
+            .setDestinationUris(cloudStorageUris);
 
         return this.getBigquery().jobs().insert(table.getProjectId(),
                 new Job().setConfiguration(new JobConfiguration().setExtract(extract)))
@@ -1777,17 +1778,23 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
 
     @Override
-    public QueryStats saveBigQueryResultsToFile(String jobId, String filename, String bucket, int directDownloadRowLimit) throws IOException {
+    public QueryStats saveBigQueryResultsToFile(String jobId, String filename, String bucket, Integer minFiles,
+            int directDownloadRowLimit) throws IOException {
         
         Job queryJob = this.waitForBigQueryJobResults(jobId, false, true);
         Long rows = this.getBigQueryResultRows(queryJob);
         QueryStats stats = null;
+        
+        if(rows == null) {
+            // cached query?
+            rows = 0L;
+        }
                 
         log.debug("Downloading " + rows + " rows from BigQuery for jobId: " + jobId);
         
-        if((rows == null) || (rows > directDownloadRowLimit)) {
+        if(rows > directDownloadRowLimit) {
             
-            stats = this.saveBigQueryResultsToCloudStorage(jobId, queryJob, bucket, filename);
+            stats = this.saveBigQueryResultsToCloudStorage(jobId, queryJob, bucket, filename, minFiles);
             
         } else {
             
@@ -1799,11 +1806,20 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     
     @Override
     public QueryStats saveBigQueryResultsToCloudStorage(String jobId, String bucket, String filename) throws IOException {
-        return this.saveBigQueryResultsToCloudStorage(jobId, null, bucket, filename);
+        return this.saveBigQueryResultsToCloudStorage(jobId, null, bucket, filename, null);
     }
     
-    
-    protected QueryStats saveBigQueryResultsToCloudStorage(String jobId, Job queryJob, String bucket, String filename) throws IOException {
+    /**
+     * 
+     * @param jobId
+     * @param queryJob
+     * @param bucket
+     * @param filename
+     * @param minFiles
+     * @return
+     * @throws IOException
+     */
+    protected QueryStats saveBigQueryResultsToCloudStorage(String jobId, Job queryJob, String bucket, String filename, Integer minFiles) throws IOException {
         
         // wait for the query job to complete
         if(queryJob == null) {
@@ -1825,11 +1841,26 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             }
         }
         
-        // use single wildcard URI
-        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_*
-        String cloudStoragePath = CLOUD_STORAGE_PREFIX + bucket + "/" + filename + "_*";
+        List<String> cloudStorageUris = new ArrayList<>();
         
-        Job extractJob = runBigQueryExtractJob(cloudStoragePath, table);
+        if((minFiles == null) || (minFiles <= 1)) {
+            // use single wildcard URI
+            // cloudex-processor-1456752400618_1456752468023_QueryResults_0_*
+            cloudStorageUris.add(CLOUD_STORAGE_PREFIX + bucket + "/" + filename + WILDCARD_SUFFIX);
+            
+        }  else {
+            // Multiple wildcard URIs
+            // cloudex-processor-1456752400618_1456752468023_QueryResults_0_1_*
+            // cloudex-processor-1456752400618_1456752468023_QueryResults_0_2_*
+            String baseUri = CLOUD_STORAGE_PREFIX + bucket + "/" + filename + "_";
+            
+            for(int i = 1; i <= minFiles; i++) {
+                
+                cloudStorageUris.add(baseUri + i + WILDCARD_SUFFIX);
+            }
+        }
+        
+        Job extractJob = runBigQueryExtractJob(cloudStorageUris, table);
         
         extractJob = this.waitForBigQueryJobResults(extractJob.getJobReference().getJobId(), false, true);
 
