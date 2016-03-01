@@ -1463,31 +1463,42 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         String status = null;
         Job pollJob = null;
+        int retries = 0;
         
         int interval = this.getApiRecheckDelay();
 
         do {
-            pollJob = this.getBigquery().jobs().get(projectId, jobId)
-                    .setOauthToken(this.getOAuthToken()).execute();
+            
+            try {
+                pollJob = this.getBigquery().jobs().get(projectId, jobId)
+                        .setOauthToken(this.getOAuthToken()).execute();
 
-            status = pollJob.getStatus().getState();
+                status = pollJob.getStatus().getState();
 
-            log.debug("Job Status: " + status + ", elapsed time (secs): " + stopwatch);
+                log.debug("Job Status: " + status + ", elapsed time (secs): " + stopwatch);
 
-            // Pause execution for one second before polling job status again, to
-            // reduce unnecessary calls to the BigQUery API and lower overall
-            // application bandwidth.
-            if (!GoogleMetaData.DONE.equals(status)) {
-                ApiUtils.block(interval);
-                
-                // add a second sleep time for every minute taken by the job
-                // some bigquery jobs can take long time e.g. export
-                int minutes = (int) stopwatch.elapsed(TimeUnit.MINUTES);
-                if(minutes > interval) {
-                    interval = minutes;
+                // Pause execution for one second before polling job status again, to
+                // reduce unnecessary calls to the BigQUery API and lower overall
+                // application bandwidth.
+                if (!GoogleMetaData.DONE.equals(status)) {
+                    ApiUtils.block(interval);
+
+                    // add a second sleep time for every minute taken by the job
+                    // some bigquery jobs can take long time e.g. export
+                    int minutes = (int) stopwatch.elapsed(TimeUnit.MINUTES);
+                    if(minutes > interval) {
+                        interval = minutes;
+                    }
+                }
+
+            } catch(IOException e) {
+                log.error("Failed to get job details, retries" + retries, e);
+                retries++;
+                if(retries > 3) {
+                    throw e;
                 }
             }
-            // TODO Error handling
+            //  Error handling
 
         } while (!GoogleMetaData.DONE.equals(status));
 
