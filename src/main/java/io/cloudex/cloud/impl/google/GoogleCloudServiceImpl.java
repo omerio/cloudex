@@ -1463,6 +1463,8 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         String status = null;
         Job pollJob = null;
+        
+        int interval = this.getApiRecheckDelay();
 
         do {
             pollJob = this.getBigquery().jobs().get(projectId, jobId)
@@ -1476,7 +1478,14 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             // reduce unnecessary calls to the BigQUery API and lower overall
             // application bandwidth.
             if (!GoogleMetaData.DONE.equals(status)) {
-                ApiUtils.block(this.getApiRecheckDelay());
+                ApiUtils.block(interval);
+                
+                // add a second sleep time for every minute taken by the job
+                // some bigquery jobs can take long time e.g. export
+                int minutes = (int) stopwatch.elapsed(TimeUnit.MINUTES);
+                if(minutes > interval) {
+                    interval = minutes;
+                }
             }
             // TODO Error handling
 
