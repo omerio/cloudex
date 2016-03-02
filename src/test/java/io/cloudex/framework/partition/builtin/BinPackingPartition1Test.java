@@ -219,27 +219,52 @@ public class BinPackingPartition1Test {
         
         BinPackingPartition function = new BinPackingPartition(this.createManyUnproportionateItems());    
         // full bin / brute force
-        this.testUnproportionateItems(function, 2, 1795, 7);
+        this.testUnproportionateItems(function, 1802, 61825926L, 2, 1795, 7);
         function = new BinPackingPartition(this.createManyUnproportionateItems());
-        this.testUnproportionateItems(function, 4, 1758, 6);
+        this.testUnproportionateItems(function, 1802, 61825926L, 4, 1758, 6);
         function = new BinPackingPartition(this.createManyUnproportionateItems());
-        this.testUnproportionateItems(function, 8, 1649, 0);
+        this.testUnproportionateItems(function, 1802, 61825926L, 8, 1649, 0);
         function = new BinPackingPartition(this.createManyUnproportionateItems());
-        this.testUnproportionateItems(function, 16, 1420, 0);
+        this.testUnproportionateItems(function, 1802, 61825926L, 16, 1420, 0);
         
         // first fit decreasing
         BinPackingPartition1 function1 = new BinPackingPartition1(this.createManyUnproportionateItems()); 
-        this.testUnproportionateItems(function1, 2, 1669, 133);
+        this.testUnproportionateItems(function1, 1802, 61825926L, 2, 1669, 133);
         function1 = new BinPackingPartition1(this.createManyUnproportionateItems()); 
-        this.testUnproportionateItems(function1, 4, 1646, 7);
+        this.testUnproportionateItems(function1, 1802, 61825926L, 4, 1646, 7);
         function1 = new BinPackingPartition1(this.createManyUnproportionateItems()); 
-        this.testUnproportionateItems(function1, 8, 226, 225);
+        this.testUnproportionateItems(function1, 1802, 61825926L, 8, 226, 225);
         function1 = new BinPackingPartition1(this.createManyUnproportionateItems()); 
-        this.testUnproportionateItems(function1, 16, 113, 112);
+        this.testUnproportionateItems(function1, 1802, 61825926L, 16, 113, 112);
+    }
+    
+    @Test
+    public void testUnproportionateItems1() {
+        
+        BinPackingPartition function = new BinPackingPartition(this.createManyUnproportionateItems1());    
+        // full bin / brute force
+        this.testUnproportionateItems(function, 24, 542614419L, 2, 18, 6);
+        function = new BinPackingPartition(this.createManyUnproportionateItems1());
+        this.testUnproportionateItems(function, 24, 542614419L, 4, 10, 4);
+        function = new BinPackingPartition(this.createManyUnproportionateItems1());
+        this.testUnproportionateItems(function, 24, 542614419L, 8, 8, 0);
+        function = new BinPackingPartition(this.createManyUnproportionateItems1());
+        this.testUnproportionateItems(function, 24, 542614419L, 16, 5, 0);
+        
+        // first fit decreasing
+        BinPackingPartition1 function1 = new BinPackingPartition1(this.createManyUnproportionateItems1()); 
+        this.testUnproportionateItems(function1, 24, 542614419L, 2, 16, 8);
+        function1 = new BinPackingPartition1(this.createManyUnproportionateItems1()); 
+        this.testUnproportionateItems(function1, 24, 542614419L, 4, 10, 4);
+        function1 = new BinPackingPartition1(this.createManyUnproportionateItems1()); 
+        this.testUnproportionateItems(function1, 24, 542614419L, 8, 4, 2);
+        function1 = new BinPackingPartition1(this.createManyUnproportionateItems1()); 
+        this.testUnproportionateItems(function1, 24, 542614419L, 16, 2, 1);
     }
     
     
-    private void testUnproportionateItems(PartitionFunction function, int numBins, 
+    private void testUnproportionateItems(PartitionFunction function, int numItems, 
+            long totalSize, int numBins, 
             int maxItemsPerBin, int minItemsPerBin) {
         
         function.setNumberOfBins(numBins);
@@ -270,11 +295,11 @@ public class BinPackingPartition1Test {
         assertEquals(numBins, bins.size());
         
         // ensure total sum
-        assertEquals(61825926L, totalSum);
+        assertEquals(totalSize, totalSum);
         
         // ensure unique 1802 files
-        assertEquals(1802, keys.size());
-        assertEquals(1802, keysl.size());
+        assertEquals(numItems, keys.size());
+        assertEquals(numItems, keysl.size());
         
         System.out.println("Ideal bin capacity: " + (totalSum / numBins));
         System.out.println("Total capacity: " + totalSum);
@@ -642,6 +667,35 @@ public class BinPackingPartition1Test {
 
 
         
+        return items;
+    }
+    
+    private List<Item> createManyUnproportionateItems1() {
+        List<Item> items = new ArrayList<>();
+        items.add(new Item("<http://www.example.com/univ-bench.owl#publicationAuthor>",114891958L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#telephone>",89333058L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#emailAddress>",89333058L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#UndergraduateStudent>",63411239L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#University>",33535101L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#advisor>",32838871L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#undergraduateDegreeFrom>",25921819L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#GraduateStudent>",20160459L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#teacherOf>",17282917L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#Course>",8642370L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#GraduateCourse>",8640547L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#ResearchAssistant>",5822584L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#mastersDegreeFrom>",5761360L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#doctoralDegreeFrom>",5761360L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#worksFor>",5761360L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#teachingAssistantOf>",4472464L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#subOrganizationOf>",2561251L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#ResearchGroup>",2401219L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#AssociateProfessor>",1919987L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#AssistantProfessor>",1520029L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#FullProfessor>",1360901L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#Lecturer>",960443L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#headOf>",160032L));
+        items.add(new Item("<http://www.example.com/univ-bench.owl#Department>",160032L));
         return items;
     }
     
