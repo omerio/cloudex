@@ -618,6 +618,8 @@ public class Coordinator extends CommonExecutable {
                         break;
                     }
                     
+                    retries = 0;
+                    
                 } catch(SocketTimeoutException e) {
                     log.warn("Timeout exception whilst waiting for processor metadata update", e);
                 
