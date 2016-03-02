@@ -483,7 +483,19 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             insertObject.getMediaHttpUploader().setDirectUploadEnabled(true);
         }
 
-        StorageObject object = insertObject.execute();
+        StorageObject object = null;
+        
+        try {
+            object = insertObject.execute();
+        
+        } catch(IOException e) {
+            
+            log.error("Error whilst uploading file", e);
+            
+            ApiUtils.block(5);
+            // try again
+            object = insertObject.execute();
+        }
 
         return this.getCloudExStorageObject(object, bucket);
     }
