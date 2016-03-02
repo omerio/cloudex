@@ -251,7 +251,27 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             this.getStorage();
             this.getBigquery();
 
-            Instance instance = this.getInstance(instanceId, zone);
+            boolean retrying = true;
+            int retries = 0;
+            Instance instance = null;
+            
+            do {
+                try {
+                    // java.net.SocketTimeoutException: connect timed out
+                    instance = this.getInstance(instanceId, zone);
+                    retrying = false;
+                    
+                } catch(IOException e) {
+                    log.error("Failed to retrieve instance details, retries: " + retries, e);
+                    retries++;
+                    if(retries > 3) {
+                        throw e;
+                    }
+                    ApiUtils.block(this.getApiRecheckDelay());
+                }
+                
+            } while(retrying);
+            
             fingerprint = instance.getMetadata().getFingerprint();
         }
 
