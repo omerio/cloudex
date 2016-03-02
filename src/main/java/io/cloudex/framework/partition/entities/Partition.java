@@ -35,6 +35,8 @@ import org.apache.commons.logging.LogFactory;
 public class Partition implements Comparable<Partition>   {
     
     private static final Log log = LogFactory.getLog(Partition.class);
+    
+    private Long max;
 
     /**
      * The scale of this partition compared to another partition
@@ -45,6 +47,38 @@ public class Partition implements Comparable<Partition>   {
      * The items in this partition
      */
     private List<Item> items = new ArrayList<>();
+
+    /**
+     * 
+     */
+    public Partition() {
+        super();
+    }
+    
+    
+
+    /**
+     * @param max - the maximum bin capacity
+     */
+    public Partition(Long max) {
+        super();
+        this.max = max;
+    }
+
+    /**
+     * Delegate to items.add
+     * @param item - the item to add
+     */
+    public boolean addIfPossible(Item item) {
+        boolean added = false;
+        Long filled = this.sum();
+        Long available = max - filled;
+        if(item.getWeight() <= available) {    
+            this.items.add(item);
+            added = true;
+        }
+        return added;
+    }
 
     /**
      * Delegate to items.add

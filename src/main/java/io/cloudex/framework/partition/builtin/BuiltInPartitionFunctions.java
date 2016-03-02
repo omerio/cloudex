@@ -31,7 +31,8 @@ import io.cloudex.framework.utils.ObjectUtils;
  */
 public enum BuiltInPartitionFunctions {
     
-    BinPackingPartition("io.cloudex.framework.partition.builtin.BinPackingPartition");
+    BinPackingPartition("io.cloudex.framework.partition.builtin.BinPackingPartition"),
+    BinPackingPartition1("io.cloudex.framework.partition.builtin.BinPackingPartition1");
     
     public final String className;
     

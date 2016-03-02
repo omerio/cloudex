@@ -37,15 +37,21 @@ public interface PartitionFunction {
 
     /**
      * the items to partition
-     * @param items
+     * @param items - the items to partition
      */
     public void setItems(List<? extends Item> items);
 
     /**
      * partition the items based on the partitioning function used
-     * @return
+     * @return - the populated bins
      */
     public List<Partition> partition();
+
+    /**
+     * Explicitly set the number of bins to use 
+     * @param numBins - the number of bins to use
+     */
+    public void setNumberOfBins(Integer numberOfBins);
     
 
 }
