@@ -147,8 +147,10 @@ public class Processor extends CommonExecutable {
                 status = metaData.getStatus();
 
             } catch(Exception e) {
-
+                
                 log.error("An error has occurred whilst running/waiting for tasks, setting status to ERROR", e);
+                // the stopwatch wasn't stopped when an exception was thrown
+                stopwatch.reset();
                 // try to update the Metadata to a fail status
                 try {
 
