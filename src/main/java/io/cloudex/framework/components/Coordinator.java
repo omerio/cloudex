@@ -569,6 +569,8 @@ public class Coordinator extends CommonExecutable {
                 
                 success = true;
                 
+                retries = 0;
+                
             } catch(IOException e) {
                 
                 log.error("Exception whilst waiting for operations completion", e);
