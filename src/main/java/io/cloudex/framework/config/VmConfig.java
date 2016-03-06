@@ -95,6 +95,9 @@ public class VmConfig implements Serializable {
     
     // Should this VM be reused, default is true
     private Boolean reuse;
+    
+    // Set to true to not give the VM an external IP
+    private Boolean noExternalIp;
 
     /**
      * @return the instanceId
@@ -299,6 +302,20 @@ public class VmConfig implements Serializable {
         this.diskSize = diskSize;
     }
 
+    /**
+     * @return the noExternalIp
+     */
+    public Boolean getNoExternalIp() {
+        return noExternalIp;
+    }
+
+    /**
+     * @param noExternalIp the noExternalIp to set
+     */
+    public void setNoExternalIp(Boolean noExternalIp) {
+        this.noExternalIp = noExternalIp;
+    }
+
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
@@ -322,6 +339,7 @@ public class VmConfig implements Serializable {
         vmConfig.setStartupScript(this.startupScript);
         vmConfig.setVmType(this.vmType);
         vmConfig.setZoneId(this.zoneId);
+        vmConfig.setNoExternalIp(this.noExternalIp);
         
         // settings
         vmConfig.setCores(this.cores);
@@ -390,6 +408,10 @@ public class VmConfig implements Serializable {
             vmConfig.setMinUsage(this.minUsage);
         }
         
+        if(config.getNoExternalIp() != null) {
+            vmConfig.setNoExternalIp(this.noExternalIp);
+        }
+        
         return vmConfig;
         
     }
@@ -426,6 +448,7 @@ public class VmConfig implements Serializable {
             //.appendSuper(super.equals(obj))
             .append(this.diskType, rhs.getDiskType())
             .append(this.diskSize, rhs.getDiskSize())
+            .append(this.noExternalIp, rhs.getNoExternalIp())
             .append(this.imageId, rhs.getImageId())
             .append(this.networkId, rhs.getNetworkId())
             .append(this.startupScript, rhs.getStartupScript())
