@@ -832,9 +832,13 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             NetworkInterface inf = new NetworkInterface(); 
             inf.setNetwork(RESOURCE_BASE_URL + 
                     this.projectId + NETWORK + config.getNetworkId());
-            AccessConfig accessConf = new AccessConfig();
-            accessConf.setType(ONE_TO_ONE_NAT).setName(EXT_NAT);
-            inf.setAccessConfigs(Lists.newArrayList(accessConf));
+            // add ability to turn off external IP addresses
+            if(config.getNoExternalIp() == null || Boolean.FALSE.equals(config.getNoExternalIp())) {
+                AccessConfig accessConf = new AccessConfig();
+                accessConf.setType(ONE_TO_ONE_NAT).setName(EXT_NAT);
+                inf.setAccessConfigs(Lists.newArrayList(accessConf));
+            }
+            
             content.setNetworkInterfaces(Lists.newArrayList(inf));
 
             // scheduling
