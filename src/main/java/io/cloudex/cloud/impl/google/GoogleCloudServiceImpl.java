@@ -886,7 +886,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             for(VmConfig config: configs) {
                 String status = InstanceStatus.PROVISIONING.toString();
 
-                int retries = 10;
+                int retries = 20;
 
                 do {
 
@@ -911,6 +911,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                                 throw e;
                             }
                             retries--;
+                            ApiUtils.block(5);
 
                         } else {
                             throw e;
