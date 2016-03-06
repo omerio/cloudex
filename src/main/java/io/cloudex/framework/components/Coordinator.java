@@ -203,6 +203,7 @@ public class Coordinator extends CommonExecutable {
 
                 stopwatch1.stop();
                 log.info("TIMER# Task " + taskName + " completed in " + stopwatch1);
+                log.info("Total processors usage cost: " + this.calculateProcessorsCost());
 
             }
 
