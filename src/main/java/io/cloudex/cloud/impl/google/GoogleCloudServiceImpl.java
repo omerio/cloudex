@@ -147,6 +147,8 @@ import com.google.common.collect.Lists;
 /**
  * A Google Cloud Platform specific implementation of cloudex {@link CloudService}
  * 
+ * TODO add multi-threading option to upload and download files from cloud storage
+ * 
  * @author Omer Dawelbeit (omerio)
  *
  */
