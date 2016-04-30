@@ -37,26 +37,26 @@ import io.cloudex.framework.cloud.api.AuthenticationProvider;
 import io.cloudex.framework.utils.ObjectUtils;
 
 /**
- * Provides authentication for code running locally on a Compute Engine instance. This will 
- * use Compute Engine service account and the Meta Data server to retrieve OAuth tokens as 
- * explained here {@see https://cloud.google.com/compute/docs/authentication}. The authorize
+ * Provides authentication for code running locally on a Compute Engine instance. This will
+ * use Compute Engine service account and the Meta Data server to retrieve OAuth tokens as
+ * explained here {see https://cloud.google.com/compute/docs/authentication}. The authorize
  * method will return a OAuth token obtained from the meta data server
  * 
- * 
+ *
  * @author Omer Dawelbeit (omerio)
  *
  */
 public class InstanceAuthenticationProvider implements AuthenticationProvider<String> {
-    
+
     private final static Log log = LogFactory.getLog(InstanceAuthenticationProvider.class);
-    
+
     // service account access token retrieved from the metadata server
     private String accessToken;
 
     // the expiry time of the token
     private Date tokenExpire;
 
-    
+
     /**
      * Returns an OAuth token, refreshes it if needed
      */
@@ -67,7 +67,7 @@ public class InstanceAuthenticationProvider implements AuthenticationProvider<St
         }
         return this.accessToken;
     }
-    
+
 
     /**
      * Retrieves a service account access token from the metadata server, the response has the format
@@ -76,8 +76,8 @@ public class InstanceAuthenticationProvider implements AuthenticationProvider<St
           "expires_in":3599,
           "token_type":"Bearer"
         }
-     * @throws IOException 
-     * @see https://developers.google.com/compute/docs/authentication
+     * @throws IOException
+     * For more details see https://developers.google.com/compute/docs/authentication
      */
     protected void refreshOAuthToken() throws IOException {
 

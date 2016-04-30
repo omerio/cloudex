@@ -146,9 +146,9 @@ import com.google.common.collect.Lists;
 
 /**
  * A Google Cloud Platform specific implementation of cloudex {@link CloudService}
- * 
+ *
  * TODO add multi-threading option to upload and download files from cloud storage
- * 
+ *
  * @author Omer Dawelbeit (omerio)
  *
  */
@@ -189,43 +189,43 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     private String serviceAccount;
 
     private List<String> scopes;
-    
+
     private boolean remote;
-    
+
     @SuppressWarnings("rawtypes")
     private AuthenticationProvider authenticationProvider;
 
     /**
      * Perform initialization before
      * this cloud service is used
-     * @throws IOException 
+     * @throws IOException
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public VmMetaData init() throws IOException {
-        
+
         // can't do anything without an authentication provider
         Validate.notNull(this.authenticationProvider);
-        
+
         Map<String, Object> attributes = null;
         String fingerprint = null;
-        
+
         this.getHttpTransport();
-        
+
         if(this.remote) {
-            // if not running on a vm on the cloud environment, then 
+            // if not running on a vm on the cloud environment, then
             // these values need to be set externally
             Validate.notNull(this.zone);
             Validate.notNull(this.projectId);
             Validate.notNull(this.instanceId);
             Validate.notNull(this.scopes);
-            
+
             Credential credential = (Credential) this.authenticationProvider.authorize();
-            
+
             this.getCompute(credential);
             this.getStorage(credential);
             this.getBigquery(credential);
-            
+
         } else {
             this.projectId = GoogleMetaData.getMetaData(PROJECT_ID_PATH);
             Map<String, Object> metaData = GoogleMetaData.getMetaDataAsMap(INSTANCE_ALL_PATH);
@@ -256,13 +256,13 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             boolean retrying = true;
             int retries = 0;
             Instance instance = null;
-            
+
             do {
                 try {
                     // java.net.SocketTimeoutException: connect timed out
                     instance = this.getInstance(instanceId, zone);
                     retrying = false;
-                    
+
                 } catch(IOException e) {
                     log.error("Failed to retrieve instance details, retries: " + retries, e);
                     retries++;
@@ -271,9 +271,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                     }
                     ApiUtils.block(this.getApiRecheckDelay());
                 }
-                
+
             } while(retrying);
-            
+
             fingerprint = instance.getMetadata().getFingerprint();
         }
 
@@ -287,7 +287,6 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      * Create a new instance of the HTTP transport
      * @return
-     * @throws GeneralSecurityException
      * @throws IOException
      */
     protected HttpTransport getHttpTransport() throws IOException {
@@ -310,21 +309,20 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException
      */
     protected String getOAuthToken() throws IOException {
-        
+
         String token = null;
-        
+
         if(!remote) {
             token = (String) this.authenticationProvider.authorize();
         }
-        
+
         return token;
     }
-    
+
     /**
      * Create a compute API client instance
      * @return
-     * @throws IOException 
-     * @throws GeneralSecurityException 
+     * @throws IOException
      */
     protected Compute getCompute() throws IOException {
         return this.getCompute(null);
@@ -333,8 +331,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      * Create a compute API client instance
      * @return
-     * @throws IOException 
-     * @throws GeneralSecurityException 
+     * @throws IOException
      */
     protected Compute getCompute(Credential credential) throws IOException {
         if(this.compute == null) {
@@ -343,12 +340,11 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         }
         return this.compute;
     }
-    
+
     /**
      * Create a bigquery API client instance
      * @return
-     * @throws IOException 
-     * @throws GeneralSecurityException 
+     * @throws IOException
      */
     protected Bigquery getBigquery() throws IOException {
         return this.getBigquery(null);
@@ -357,8 +353,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      * Create a bigquery API client instance
      * @return
-     * @throws IOException 
-     * @throws GeneralSecurityException 
+     * @throws IOException
      */
     protected Bigquery getBigquery(Credential credential) throws IOException {
         if(this.bigquery == null) {
@@ -371,18 +366,16 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      * Create a storage API client instance
      * @return
-     * @throws IOException 
-     * @throws GeneralSecurityException 
+     * @throws IOException
      */
     protected Storage getStorage() throws IOException {
         return this.getStorage(null);
     }
-    
+
     /**
      * Create a storage API client instance
      * @return
-     * @throws IOException 
-     * @throws GeneralSecurityException 
+     * @throws IOException
      */
     protected Storage getStorage(Credential credential) throws IOException {
         if(this.storage == null) {
@@ -396,7 +389,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      * Create a bucket on the mass cloud storage
      * @param bucket
-     * @throws IOException 
+     * @throws IOException
      */
     @Override
     public void createCloudStorageBucket(String bucket, String location) throws IOException {
@@ -423,30 +416,31 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      * Upload the provided file into cloud storage
      * THis is what Google returns:
+     * <pre>
      * CONFIG: {
-		 "kind": "storage#object",
-		 "id": "ecarf/umbel_links.nt_out.gz/1397227987451000",
-		 "selfLink": "https://www.googleapis.com/storage/v1beta2/b/ecarf/o/umbel_links.nt_out.gz",
-		 "name": "umbel_links.nt_out.gz",
-		 "bucket": "ecarf",
-		 "generation": "1397227987451000",
-		 "metageneration": "1",
-		 "contentType": "application/x-gzip",
-		 "updated": "2014-04-11T14:53:07.339Z",
-		 "storageClass": "STANDARD",
-		 "size": "8474390",
-		 "md5Hash": "UPhXcZZGbD9198OhQcdnvQ==",
-		 "mediaLink": "https://www.googleapis.com/storage/v1beta2/b/ecarf/o/umbel_links.nt_out.gz?generation=1397227987451000&alt=media",
-		 "owner": {
-		  "entity": "user-00b4903a97e56638621f0643dc282444442a11b19141d3c7b425c4d17895dcf6",
-		  "entityId": "00b4903a97e56638621f0643dc282444442a11b19141d3c7b425c4d17895dcf6"
-		 },
-		 "crc32c": "3twYkA==",
-		 "etag": "CPj48u7X2L0CEAE="
-		}
+  		 "kind": "storage#object",
+  		 "id": "ecarf/umbel_links.nt_out.gz/1397227987451000",
+  		 "selfLink": "https://www.googleapis.com/storage/v1beta2/b/ecarf/o/umbel_links.nt_out.gz",
+  		 "name": "umbel_links.nt_out.gz",
+  		 "bucket": "ecarf",
+  		 "generation": "1397227987451000",
+  		 "metageneration": "1",
+  		 "contentType": "application/x-gzip",
+  		 "updated": "2014-04-11T14:53:07.339Z",
+  		 "storageClass": "STANDARD",
+  		 "size": "8474390",
+  		 "md5Hash": "UPhXcZZGbD9198OhQcdnvQ==",
+  		 "owner": {
+  		  "entity": "user-00b4903a97e56638621f0643dc282444442a11b19141d3c7b425c4d17895dcf6",
+  		  "entityId": "00b4903a97e56638621f0643dc282444442a11b19141d3c7b425c4d17895dcf6"
+  		 },
+  		 "crc32c": "3twYkA==",
+  		 "etag": "CPj48u7X2L0CEAE="
+  		}
+      </pre>
      * @param filename
      * @param bucket
-     * @throws IOException 
+     * @throws IOException
      */
     @Override
     public io.cloudex.framework.cloud.entities.StorageObject uploadFileToCloudStorage(String filename, String bucket, Callback callback) throws IOException {
@@ -473,8 +467,8 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         mediaContent.setLength(fileStream.available());
 
         Storage.Objects.Insert insertObject =
-                getStorage().objects().insert(bucket, 
-                        new StorageObject().setName(StringUtils.substringAfterLast(filename, FileUtils.PATH_SEPARATOR)), 
+                getStorage().objects().insert(bucket,
+                        new StorageObject().setName(StringUtils.substringAfterLast(filename, FileUtils.PATH_SEPARATOR)),
                         mediaContent).setOauthToken(this.getOAuthToken());
 
         insertObject.getMediaHttpUploader().setProgressListener(
@@ -486,14 +480,14 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         }
 
         StorageObject object = null;
-        
+
         try {
             object = insertObject.execute();
-        
+
         } catch(IOException e) {
-            
+
             log.error("Error whilst uploading file", e);
-            
+
             ApiUtils.block(5);
             // try again
             object = insertObject.execute();
@@ -541,7 +535,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException
      */
     @Override
-    public void downloadObjectFromCloudStorage(String object, String outFile, 
+    public void downloadObjectFromCloudStorage(String object, String outFile,
             String bucket, Callback callback) throws IOException {
 
         log.debug("Downloading cloud storage file " + object + ", to: " + outFile);
@@ -559,16 +553,16 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     }
 
     /**
+     *  TODO Parallel/Multi download
      * Download an object from cloud storage to a file, this method will block until the file is downloaded
      * @param object
      * @param outFile
      * @param bucket
-     * @param callback
      * @throws IOException
-     * TODO Parallel/Multi download
+     *
      */
     @Override
-    public void downloadObjectFromCloudStorage(String object, final String outFile, 
+    public void downloadObjectFromCloudStorage(String object, final String outFile,
             String bucket) throws IOException {
 
         //final Thread currentThread = Thread.currentThread();
@@ -596,7 +590,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     @Override
     public List<io.cloudex.framework.cloud.entities.StorageObject> listCloudStorageObjects(String bucket) throws IOException {
         List<io.cloudex.framework.cloud.entities.StorageObject> objects = new ArrayList<>();
-        Storage.Objects.List listObjects =  
+        Storage.Objects.List listObjects =
                 getStorage().objects().list(bucket).setOauthToken(this.getOAuthToken());
         // we are not paging, just get everything
         Objects cloudObjects = listObjects.execute();
@@ -616,7 +610,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @return
      */
     private io.cloudex.framework.cloud.entities.StorageObject getCloudExStorageObject(StorageObject cloudObject, String bucket) {
-        io.cloudex.framework.cloud.entities.StorageObject object = 
+        io.cloudex.framework.cloud.entities.StorageObject object =
                 new io.cloudex.framework.cloud.entities.StorageObject();
         object.setContentType(cloudObject.getContentType());
         object.setDirectLink(cloudObject.getSelfLink());
@@ -626,18 +620,18 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         return object;
     }
 
-    
+
     //------------------------------------------------- Compute -------------------------------
 
     /**
-     * 
+     *
      * @param instanceId
      * @param zoneId
      * @return
      * @throws IOException
      */
     private Instance getInstance(String instanceId, String zoneId) throws IOException {
-        return this.getCompute().instances().get(this.projectId, 
+        return this.getCompute().instances().get(this.projectId,
                 zoneId != null ? zoneId : this.zone, instanceId)
                 .setOauthToken(this.getOAuthToken())
                 .execute();
@@ -648,7 +642,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * Get the meta data of the current instance, this will simply call the metadata server.
      * Wait for change will block until there is a change
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     @Override
     public VmMetaData getMetaData(boolean waitForChange) throws IOException {
@@ -666,11 +660,11 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @param instanceId
      * @param zoneId
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     @Override
     public VmMetaData getMetaData(String instanceId, String zoneId) throws IOException {
-        Instance instance = this.getInstance(instanceId != null ? instanceId : this.instanceId, 
+        Instance instance = this.getInstance(instanceId != null ? instanceId : this.instanceId,
                 zoneId != null ? zoneId : this.zone);
         List<Items> items = instance.getMetadata().getItems();
         Map<String, Object> attributes = new HashMap<>();
@@ -684,8 +678,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      *
      * Update the meta data of the current instance
-     * @param key
-     * @param value
+     * @param metaData
      * @throws IOException
      */
     @Override
@@ -694,14 +687,16 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     }
 
     /**
-     * 
+     *
      * Update the meta data of the the provided instance
-     * @param key
-     * @param value
+     * @param metaData
+     * @param zoneId
+     * @param instanceId
+     * @param block
      * @throws IOException
      */
     @Override
-    public String updateMetadata(VmMetaData metaData, 
+    public String updateMetadata(VmMetaData metaData,
             String zoneId, String instanceId, boolean block) throws IOException {
 
         Metadata metadata = this.getGoogleMetaData(metaData);
@@ -718,12 +713,12 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             // update the fingerprint of the current metadata
             Instance instance = this.getInstance(instanceId, zoneId);
             metaData.setFingerprint(instance.getMetadata().getFingerprint());
-        
+
         }
-        
+
         return operation.getName();
     }
-    
+
     /**
      * Block and wait the operations with the provided references to complete
      * @param references
@@ -734,11 +729,11 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     public void blockOnComputeOperations(List<String> references, String zoneId) throws IOException {
 
         for(String reference: references) {
-            
+
             Operation operation = null;
 
             do {
-                
+
                  operation = this.getCompute().zoneOperations().get(projectId, zoneId, reference)
                         .setOauthToken(this.getOAuthToken()).execute();
 
@@ -748,13 +743,13 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                     Errors error = operation.getError().getErrors().get(0);
                     throw new IOException("Operation failed: " + error.getCode() + " - " + error.getMessage());
                 }
-                
+
             } while((operation != null) && !DONE.endsWith(operation.getStatus()));
         }
     }
 
     /**
-     * Wait until the provided operation is done, if the operation returns an error then an IOException 
+     * Wait until the provided operation is done, if the operation returns an error then an IOException
      * will be thrown
      * @param operation
      * @param zoneId
@@ -779,16 +774,16 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
     /**
      * Create VM instances, optionally block until all are created. If any fails then the returned flag is false
-     * 
+     *
      *  body = {
     'name': NEW_INSTANCE_NAME,
-    'machineType': <fully-qualified-machine-type-url>,
+    'machineType': &lt;fully-qualified-machine-type-url&gt;,
     'networkInterfaces': [{
       'accessConfigs': [{
         'type': 'ONE_TO_ONE_NAT',
         'name': 'External NAT'
        }],
-      'network': <fully-qualified-network-url>
+      'network': &lt;fully-qualified-network-url&gt;
     }],
     'disk': [{
        'autoDelete': 'true',
@@ -796,11 +791,11 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
        'type': 'PERSISTENT',
        'initializeParams': {
           'diskName': 'my-root-disk',
-          'sourceImage': '<fully-qualified-image-url>',
+          'sourceImage': '&lt;fully-qualified-image-url&gt;',
        }
      }]
   }
-     * @param config
+     * @param configs
      * @param block
      * @throws IOException
      * TODO start VMs in parallel
@@ -815,7 +810,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             Instance content = new Instance();
 
             // Instance config
-            content.setMachineType(RESOURCE_BASE_URL + 
+            content.setMachineType(RESOURCE_BASE_URL +
                     this.projectId + ZONES + zoneId + MACHINE_TYPES+ config.getVmType());
             content.setName(config.getInstanceId());
             //content.setZone(zoneId);
@@ -831,8 +826,8 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             content.setServiceAccounts(Lists.newArrayList(sa));
 
             // network
-            NetworkInterface inf = new NetworkInterface(); 
-            inf.setNetwork(RESOURCE_BASE_URL + 
+            NetworkInterface inf = new NetworkInterface();
+            inf.setNetwork(RESOURCE_BASE_URL +
                     this.projectId + NETWORK + config.getNetworkId());
             // add ability to turn off external IP addresses
             if(config.getNoExternalIp() == null || Boolean.FALSE.equals(config.getNoExternalIp())) {
@@ -840,7 +835,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                 accessConf.setType(ONE_TO_ONE_NAT).setName(EXT_NAT);
                 inf.setAccessConfigs(Lists.newArrayList(accessConf));
             }
-            
+
             content.setNetworkInterfaces(Lists.newArrayList(inf));
 
             // scheduling
@@ -866,7 +861,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
             if(StringUtils.isNotBlank(config.getDiskType())) {
                 // standard or SSD based disks
-                params.setDiskType(RESOURCE_BASE_URL + 
+                params.setDiskType(RESOURCE_BASE_URL +
                         this.projectId + ZONES + zoneId + DISK_TYPES + config.getDiskType());
             }
 
@@ -934,7 +929,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      * Delete the VMs provided in this config
      * @param configs
-     * @throws IOException 
+     * @throws IOException
      *
      */
     @Override
@@ -950,7 +945,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
     /**
      * Delete the currently running vm, i.e. self terminate
-     * @throws IOException 
+     * @throws IOException
      */
     @Override
     public void shutdownInstance() throws IOException {
@@ -1040,8 +1035,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 		  }
 		 }
 		}
-     * @param files - The source URIs must be fully-qualified, in the format gs://<bucket>/<object>.
+     * @param files - The source URIs must be fully-qualified, in the format gs://&lt;bucket&gt;/&lt;object&gt;.
      * @param table
+     * @param createTable
      * @return
      * @throws IOException
      */
@@ -1053,7 +1049,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         Job job = new Job();
         JobConfiguration config = new JobConfiguration();
-        JobConfigurationLoad load = new JobConfigurationLoad();	
+        JobConfigurationLoad load = new JobConfigurationLoad();
         config.setLoad(load);
         job.setConfiguration(config);
 
@@ -1097,7 +1093,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         List<TableFieldSchema> fields = new ArrayList<>();
         TableFieldSchema field;
         List<BigDataColumn> columns = table.getColumns();
-        
+
         for(BigDataColumn column: columns) {
             field = new TableFieldSchema();
             field.setName(column.getName());
@@ -1181,7 +1177,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         Stopwatch stopwatch = Stopwatch.createStarted();
 
         String [] names = getTableAndDatasetNames(table.getName());
-        
+
         TableReference tableRef = (new TableReference())
                 .setProjectId(this.projectId)
                 .setDatasetId(names[0])
@@ -1228,7 +1224,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         return completedIds;
 
     }
-    
+
     /**
      * Return the name of the table and it's dataset i.e.
      * mydataset.mytable returns [mydataset, mytable]
@@ -1237,15 +1233,14 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      */
     private String [] getTableAndDatasetNames(String table) {
         Validate.notNull(table);
-        
+
         return StringUtils.split(table, '.');
     }
 
     /**
      * Stream triple data into big query
-     * @param files
+     * @param objects
      * @param table
-     * @param createTable
      * @throws IOException
      */
     @Override
@@ -1311,7 +1306,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     /**
      * Stream a list of rows into bigquery. Retries 3 times if the insert of some rows has failed, i.e. Bigquery returns
      * an insert error
-     * 
+     *
      *  {
 		  "insertErrors" : [ {
 		    "errors" : [ {
@@ -1321,13 +1316,13 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 		  }],
   		  "kind" : "bigquery#tableDataInsertAllResponse"
   		}
-     *	  
+     *
      * @param datasetId
      * @param tableId
      * @param rowList
      * @throws IOException
      */
-    protected void streamRowsIntoBigQuery(String datasetId, String tableId, 
+    protected void streamRowsIntoBigQuery(String datasetId, String tableId,
             List<TableDataInsertAllRequest.Rows>  rowList, int retries) throws IOException {
 
         /*
@@ -1360,7 +1355,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             } catch(GoogleJsonResponseException e) {
 
 
-                GoogleJsonError error = e.getDetails();	
+                GoogleJsonError error = e.getDetails();
 
                 // check for rate limit errors
                 if((error != null) && (error.getErrors() != null) && !error.getErrors().isEmpty() &&
@@ -1411,7 +1406,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
             } else {
                 retries++;
-                log.warn(failedList.size() + " rows failed to be inserted retrying again. Retries = " + retries); 
+                log.warn(failedList.size() + " rows failed to be inserted retrying again. Retries = " + retries);
                 this.streamRowsIntoBigQuery(datasetId, tableId, failedList, retries);
             }
         }
@@ -1419,17 +1414,16 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
     @Override
     public String startBigDataQuery(String querySql) throws IOException {
-        
+
         return this.startBigDataQuery(querySql, null);
-        
+
     }
-    
+
     /**
      * Creates an asynchronous Query Job for a particular query on a dataset
      *
-     * @param bigquery  an authorized BigQuery client
-     * @param projectId a String containing the project ID
      * @param querySql  the actual query string
+     * @param table the table details
      * @return a reference to the inserted query job
      * @throws IOException
      */
@@ -1445,24 +1439,24 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         job.setConfiguration(config);
         queryConfig.setQuery(querySql);
-        
+
         // if a table is provided then set the large results to true and supply
         // a temp table
         if(table != null) {
             String [] names = this.getTableAndDatasetNames(table.getName());
             String insId = StringUtils.replace(instanceId, "-", "_");
-            String tempTable = names[1] + '_' + insId + '_' + System.currentTimeMillis();            
-            
+            String tempTable = names[1] + '_' + insId + '_' + System.currentTimeMillis();
+
             TableReference tableRef = (new TableReference())
                     .setProjectId(this.projectId)
                     .setDatasetId(names[0])
                     .setTableId(tempTable);
-            
+
             queryConfig.setAllowLargeResults(true);
             queryConfig.setDestinationTable(tableRef);
         }
 
-        com.google.api.services.bigquery.Bigquery.Jobs.Insert insert = 
+        com.google.api.services.bigquery.Bigquery.Jobs.Insert insert =
                 this.getBigquery().jobs().insert(projectId, job);
 
         insert.setProjectId(projectId);
@@ -1474,7 +1468,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         return jobRef.getJobId();
     }
-    
+
     /**
      * Polls the status of a BigQuery job, returns Job reference if "Done"
      * This method will block until the job status is Done
@@ -1483,9 +1477,9 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException
      */
     protected String checkBigQueryJobResults(String jobId, boolean retry, boolean throwError) throws IOException {
-        
+
         Job pollJob = this.waitForBigQueryJobResults(jobId, retry, throwError);
-        
+
         return pollJob.getJobReference().getJobId();
     }
 
@@ -1503,11 +1497,11 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         String status = null;
         Job pollJob = null;
         int retries = 0;
-        
+
         int interval = this.getApiRecheckDelay();
 
         do {
-            
+
             try {
                 pollJob = this.getBigquery().jobs().get(projectId, jobId)
                         .setOauthToken(this.getOAuthToken()).execute();
@@ -1599,7 +1593,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 		        "projectId" : "ecarf-1000",
 		        "tableId" : "anon3fe271d7c2fafca6fbe9e0490a1488c103a3a8fd"
 		      },
-		      "query" : "select subject,object from [ontologies.swetodblp@-221459-] where predicate=\"<http://lsdis.cs.uga.edu/projects/semdis/opus#last_modified_date>\";",
+		      "query" : "select subject,object from [ontologies.swetodblp@-221459-] where predicate=\"&lt;http://lsdis.cs.uga.edu/projects/semdis/opus#last_modified_date&gt;\";",
 		      "writeDisposition" : "WRITE_TRUNCATE"
 		    }
 		  },
@@ -1628,7 +1622,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 		    "state" : "DONE"
 		  }
 		}
-     * @throws IOException 
+     * @throws IOException
      */
     protected Job retryFailedBigQueryJob(Job job) throws IOException {
         String jobId = job.getJobReference().getJobId();
@@ -1641,16 +1635,16 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             String query = config.getQuery().getQuery();
             // re-execute the query
             ApiUtils.block(this.getApiRecheckDelay());
-            
+
             BigDataTable table = null;
-            
-            if(BooleanUtils.isTrue(config.getQuery().getAllowLargeResults()) && 
+
+            if(BooleanUtils.isTrue(config.getQuery().getAllowLargeResults()) &&
                     (config.getQuery().getDestinationTable() != null)) {
-                
+
                 TableReference tableRef = config.getQuery().getDestinationTable();
-                table = new BigDataTable(tableRef.getDatasetId() + '.' + StringUtils.split(tableRef.getTableId(), '_')[0]); 
+                table = new BigDataTable(tableRef.getDatasetId() + '.' + StringUtils.split(tableRef.getTableId(), '_')[0]);
             }
-            
+
             String newJobId = startBigDataQuery(query, table);
             ApiUtils.block(this.getApiRecheckDelay());
             job = waitForBigQueryJobResults(newJobId, false, false);
@@ -1691,7 +1685,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
             log.warn("failed to log job stats", e);
         }
     }
-    
+
     /**
      * Find the records written from the job statistics
      * "queryPlan" : [ {
@@ -1715,25 +1709,25 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
         "writeRatioAvg" : 0.3758086421588464,
         "writeRatioMax" : 0.49154118427586363
       } ],
-     * 
+     *
      * @param job
      * @return
      */
     protected Long getBigQueryResultRows(Job job) {
         Long rows = null;
-        if(job.getStatistics() != null && 
+        if(job.getStatistics() != null &&
                 job.getStatistics().getQuery() != null &&
                 job.getStatistics().getQuery().getQueryPlan() != null) {
-            
+
             List<ExplainQueryStage> explains = job.getStatistics().getQuery().getQueryPlan();
-            
+
             if(explains.size() > 0) {
                 ExplainQueryStage stage = explains.get(0);
                 rows = stage.getRecordsWritten();
             }
-            
+
         }
-        
+
         return rows;
     }
 
@@ -1750,7 +1744,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 		 },
 		 "configuration": {
 		  "query": {
-		   "query": "select subject from swetodblp.swetodblp_triple where object = \"\u003chttp://lsdis.cs.uga.edu/projects/semdis/opus#Article_in_Proceedings1\u003e\";",
+		   "query": "select subject from table where object = \"blah\";",
 		   "destinationTable": {
 		    "projectId": "ecarf-1000",
 		    "datasetId": "_f14a24df5a43859914cb508177aa01d64466d055",
@@ -1775,7 +1769,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 		 }
 		}
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     protected GetQueryResultsResponse getQueryResults(String jobId, String pageToken) throws IOException {
         int retries = 3;
@@ -1807,20 +1801,19 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
 
         return queryResults;
     }
-    
+
     /**
      * A job that extracts data from a table.
-     * @param bigquery Bigquery service to use
-     * @param cloudStoragePath Cloud storage bucket we are inserting into
+     * @param cloudStorageUris Cloud storage file URIs
      * @param table Table to extract from
      * @return The job to extract data from the table
      * @throws IOException Thrown if error connceting to Bigtable
      */
     // [START extract_job]
     protected Job runBigQueryExtractJob(final List<String> cloudStorageUris, final TableReference table) throws IOException {
-        
+
         log.debug("Saving table: " + table + ", to cloud storage files: " + cloudStorageUris);
-        
+
         //https://cloud.google.com/bigquery/exporting-data-from-bigquery
         JobConfigurationExtract extract = new JobConfigurationExtract()
             .setSourceTable(table)
@@ -1833,43 +1826,43 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                 .setOauthToken(this.getOAuthToken())
                 .execute();
     }
-    
+
 
 
     @Override
     public QueryStats saveBigQueryResultsToFile(String jobId, String filename, String bucket, Integer minFiles,
             int directDownloadRowLimit) throws IOException {
-        
+
         Job queryJob = this.waitForBigQueryJobResults(jobId, false, true);
         Long rows = this.getBigQueryResultRows(queryJob);
         QueryStats stats = null;
-        
+
         if(rows == null) {
             // cached query?
             rows = 0L;
         }
-                
+
         log.debug("Downloading " + rows + " rows from BigQuery for jobId: " + jobId);
-        
+
         if(rows > directDownloadRowLimit) {
-            
+
             stats = this.saveBigQueryResultsToCloudStorage(jobId, queryJob, bucket, filename, minFiles);
-            
+
         } else {
-            
+
             stats = this.saveBigQueryResultsToFile(jobId, queryJob, FileUtils.TEMP_FOLDER + filename);
         }
-        
+
         return stats;
     }
-    
+
     @Override
     public QueryStats saveBigQueryResultsToCloudStorage(String jobId, String bucket, String filename) throws IOException {
         return this.saveBigQueryResultsToCloudStorage(jobId, null, bucket, filename, null);
     }
-    
+
     /**
-     * 
+     *
      * @param jobId
      * @param queryJob
      * @param bucket
@@ -1879,19 +1872,19 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
      * @throws IOException
      */
     protected QueryStats saveBigQueryResultsToCloudStorage(String jobId, Job queryJob, String bucket, String filename, Integer minFiles) throws IOException {
-        
+
         // wait for the query job to complete
         if(queryJob == null) {
             queryJob = this.waitForBigQueryJobResults(jobId, true, false);
         }
-                
+
         Stopwatch stopwatch = Stopwatch.createStarted();
-        
+
         QueryStats stats = new QueryStats();
-        
+
         // get the temporary table details
         TableReference table = queryJob.getConfiguration().getQuery().getDestinationTable();
-        
+
         if(queryJob.getStatistics() != null) {
             stats.setTotalProcessedBytes(queryJob.getStatistics().getTotalBytesProcessed());
             Long rows = this.getBigQueryResultRows(queryJob);
@@ -1899,58 +1892,58 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                 stats.setTotalRows(BigInteger.valueOf(rows));
             }
         }
-        
+
         List<String> cloudStorageUris = new ArrayList<>();
-        
+
         if((minFiles == null) || (minFiles <= 1)) {
             // use single wildcard URI
             // cloudex-processor-1456752400618_1456752468023_QueryResults_0_*
             cloudStorageUris.add(CLOUD_STORAGE_PREFIX + bucket + "/" + filename + WILDCARD_SUFFIX);
-            
+
         }  else {
             // Multiple wildcard URIs
             // cloudex-processor-1456752400618_1456752468023_QueryResults_0_1_*
             // cloudex-processor-1456752400618_1456752468023_QueryResults_0_2_*
             String baseUri = CLOUD_STORAGE_PREFIX + bucket + "/" + filename + "_";
-            
+
             for(int i = 1; i <= minFiles; i++) {
-                
+
                 cloudStorageUris.add(baseUri + i + WILDCARD_SUFFIX);
             }
         }
-        
+
         Job extractJob = runBigQueryExtractJob(cloudStorageUris, table);
-        
+
         extractJob = this.waitForBigQueryJobResults(extractJob.getJobReference().getJobId(), false, true);
 
         // list the relevant export files in cloud storage i.e.
-        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_000000000000   
-        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_000000000001    
+        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_000000000000
+        // cloudex-processor-1456752400618_1456752468023_QueryResults_0_000000000001
         // cloudex-processor-1456752400618_1456752468023_QueryResults_0_000000000002
         List<io.cloudex.framework.cloud.entities.StorageObject> objects = this.listCloudStorageObjects(bucket);
-        
+
         List<String> files = new ArrayList<>();
-        
+
         for(io.cloudex.framework.cloud.entities.StorageObject object: objects) {
             String name = object.getName();
             if(name.startsWith(filename)) {
                 files.add(name);
             }
         }
-        
+
         for(String file: files) {
 
             log.debug("Downloading query results file: " + file);
-            
+
             String localFile = FileUtils.TEMP_FOLDER + file;
-            
+
             this.downloadObjectFromCloudStorage(file, localFile, bucket);
-            
+
             stats.getOutputFiles().add(localFile);
         }
-        
+
         log.debug("BigQuery query data saved successfully, timer: " + stopwatch);
-        
+
         return stats;
     }
 
@@ -1958,7 +1951,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     public QueryStats saveBigQueryResultsToFile(String jobId, String filename) throws IOException {
         return this.saveBigQueryResultsToFile(jobId, null, filename);
     }
-    
+
     /**
      * Polls a big data job and once done save the results to a file
      * @param jobId
@@ -1969,21 +1962,21 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     public QueryStats saveBigQueryResultsToFile(String jobId, Job queryJob, String filename) throws IOException {
         // query with retry support
         String completedJob;
-        
+
         if(queryJob == null) {
             completedJob = checkBigQueryJobResults(jobId, true, false);
         } else {
             completedJob = queryJob.getJobReference().getJobId();
         }
-        
+
         Joiner joiner = Joiner.on(',');
         String pageToken = null;
         BigInteger totalRows = null;
         Long totalBytes = null;
         Integer numFields = null;
-        
+
         Stopwatch stopwatch = Stopwatch.createStarted();
-        
+
         try(PrintWriter writer = new PrintWriter(new FileOutputStream(filename))) {
 
             do {
@@ -2009,36 +2002,36 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
                     // one field only
                     if(numFields == 1) {
                         for (TableRow row : rows) {
-                            writer.println(StringEscapeUtils.escapeCsv((String) row.getF().get(0).getV()));		
+                            writer.println(StringEscapeUtils.escapeCsv((String) row.getF().get(0).getV()));
                         }
 
                     } else {
                         // multiple fields
                         for (TableRow row : rows) {
-                            
+
                             List<Object> fields = new ArrayList<>();
-                            
+
                             for (TableCell field : row.getF()) {
-                                
+
                                 if(Data.isNull(field.getV())) {
-                                    
+
                                     fields.add("");
-                                    
+
                                 } else {
-                                    
+
                                     fields.add(StringEscapeUtils.escapeCsv((String) field.getV()));
                                 }
                             }
-                            writer.println(joiner.join(fields));		
+                            writer.println(joiner.join(fields));
                         }
                     }
                 }
 
             } while((pageToken != null) && !BigInteger.ZERO.equals(totalRows));
         }
-        
+
         log.debug("BigQuery query data saved successfully, timer: " + stopwatch);
-        
+
         QueryStats stats = new QueryStats(totalRows, totalBytes);
         stats.getOutputFiles().add(filename);
         return stats;
@@ -2193,7 +2186,7 @@ public class GoogleCloudServiceImpl implements GoogleCloudService {
     @Override
     public void setAuthenticationProvider(AuthenticationProvider provider) {
         this.authenticationProvider = provider;
-        
+
     }
 
 }
