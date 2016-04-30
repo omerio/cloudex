@@ -77,7 +77,7 @@ public final class FileUtils {
     
     /**
      * Delete the file with the provided string
-     * @param filename
+     * @param filename - the name of the file to delete
      * @return
      */
     public static boolean deleteFile(String filename) {
@@ -87,8 +87,7 @@ public final class FileUtils {
     
     /**
      * copy the file with the provided string
-     * @param filename
-     * @return
+     * @param filename - the name of the file to copy
      * @throws IOException 
      */
     public static void copyFile(String filename, String newName) throws IOException {

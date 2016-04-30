@@ -49,7 +49,7 @@ public interface PartitionFunction {
 
     /**
      * Explicitly set the number of bins to use 
-     * @param numBins - the number of bins to use
+     * @param numberOfBins - the number of bins to use
      */
     public void setNumberOfBins(Integer numberOfBins);
     

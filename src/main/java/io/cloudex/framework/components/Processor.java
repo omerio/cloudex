@@ -54,7 +54,6 @@ public class Processor extends CommonExecutable {
 
     /**
      * 
-     * @param metaData - vm instance metadata 
      * @param cloudService - cloud service implementation
      * @throws IOException if cloud api calls fail
      */
@@ -207,7 +206,6 @@ public class Processor extends CommonExecutable {
         private TaskFactory taskFactory;
 
         /**
-         * @param metaData - the metadata of the current vm
          * @param cloudService - the cloud service implementation
          */
         public Builder(CloudService cloudService) {

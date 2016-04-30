@@ -101,7 +101,6 @@ public class Coordinator extends CommonExecutable {
     /**
      * 
      * @param job - the coordinator job
-     * @param metaData - the vm meta data
      * @param cloudService - the cloud service implementation
      * @throws IOException if any of the cloud api calls fail
      */

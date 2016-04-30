@@ -205,7 +205,6 @@ public interface CloudService {
      * Creates an asynchronous Query Job for a particular query on a dataset
      *
      * @param querySql  the actual query string
-     * @param table the table being queried
      * @return a reference to the inserted query job
      * @throws IOException if any of the cloud api calls fail
      */

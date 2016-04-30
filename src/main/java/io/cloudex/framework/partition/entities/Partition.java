@@ -130,7 +130,6 @@ public class Partition implements Comparable<Partition>   {
 
     /**
      * Sums item weights
-     * @param items
      * @return
      */
     public Long sum() {

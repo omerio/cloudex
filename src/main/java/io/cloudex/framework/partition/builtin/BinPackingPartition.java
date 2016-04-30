@@ -47,7 +47,7 @@ import org.apache.commons.lang3.Validate;
  * <li>numberOfBins - Integer</li>
  * </ul>
  * 
- * @see http://mathworld.wolfram.com/Bin-PackingProblem.html
+ * For more information about bin packing problems see: http://mathworld.wolfram.com/Bin-PackingProblem.html
  * @author Omer Dawelbeit (omerio)
  *
  */
