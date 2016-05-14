@@ -8,7 +8,11 @@
 [![Join the chat at https://gitter.im/omerio/cloudex](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/omerio/cloudex)
 
 
-CloudEx is a simple cloud-based tasks execution framework. It's a framework for embarrassingly parallel tasks that are delegated by a coordinator to a number of processors.
+[CloudEx](http://cloudex.io) is a simple cloud-based task execution framework. It's a framework for embarrassingly parallel tasks that are delegated by a coordinator to a number of processors.
+
+## Getting Started
+
+Include the following Maven dependencies for the core library:
 
 ```xml
 <dependency>
@@ -18,4 +22,30 @@ CloudEx is a simple cloud-based tasks execution framework. It's a framework for 
 </dependency>
 ```
 
-More to come...
+Then import the cloud provider specific library (e.g. Google Cloud Platform)
+
+```xml
+<dependency>
+  <groupId>io.cloudex</groupId>
+  <artifactId>cloudex-google</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+### Usage
+
+TODO
+
+## Documentations
+
+To find out more about CloudEx, check out the [documentation](https://github.com/omerio/cloudex/wiki).
+
+## Contributing
+
+See the [CONTRIBUTING Guidelines](https://github.com/omerio/cloudex/blob/master/CONTRIBUTING.md)
+
+## Support
+If you have any problem or suggestion please open an issue [here](https://github.com/omerio/cloudex/issues).
+
+## License
+Apache 2.0 - See [LICENSE] for more information.
