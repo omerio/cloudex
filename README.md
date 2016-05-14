@@ -7,12 +7,25 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.cloudex/cloudex-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.cloudex/cloudex-core)
 [![Join the chat at https://gitter.im/omerio/cloudex](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/omerio/cloudex)
 
-
 [CloudEx](http://cloudex.io) is a simple cloud-based task execution framework. It's a framework for embarrassingly parallel tasks that are delegated by a coordinator to a number of processors.
 
 ## Getting Started
 
-Include the following Maven dependencies for the core library:
+To build the libraries:
+
+```bash
+    git clone https://github.com/omerio/cloudex.git
+    cd cloudex
+    mvn install
+```   
+
+### Requirements
+
+Java 7 or above.
+
+### Usage
+
+Include the following Maven dependency for the core library:
 
 ```xml
 <dependency>
@@ -22,7 +35,7 @@ Include the following Maven dependencies for the core library:
 </dependency>
 ```
 
-Then import the cloud provider specific library (e.g. Google Cloud Platform)
+Then include the dependency for the cloud provider specific library (e.g. Google Cloud Platform)
 
 ```xml
 <dependency>
@@ -31,10 +44,6 @@ Then import the cloud provider specific library (e.g. Google Cloud Platform)
   <version>1.0.0</version>
 </dependency>
 ```
-
-### Usage
-
-TODO
 
 ## Documentations
 
@@ -48,4 +57,4 @@ See the [CONTRIBUTING Guidelines](https://github.com/omerio/cloudex/blob/master/
 If you have any problem or suggestion please open an issue [here](https://github.com/omerio/cloudex/issues).
 
 ## License
-Apache 2.0 - See [LICENSE] for more information.
+Apache 2.0 - See [LICENSE](https://github.com/omerio/cloudex/blob/master/README.md) for more information.
