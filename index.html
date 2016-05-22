@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Cloudex by omerio</title>
+    <title>CloudEx - Java Framework for Executing Jobs on the Cloud</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
@@ -17,57 +17,102 @@
         <h2 class="project-tagline">A low-level Java framework for executing jobs on dynamic, ephemeral and heterogeneous cloud-based clusters.</h2>
         <a href="https://github.com/omerio/cloudex" class="btn">View on GitHub</a>
         <a href="https://github.com/omerio/cloudex/wiki" class="btn">Documentation</a>
-        <a href="https://github.com/omerio/cloudex/tarball/master" class="btn">Download .tar.gz</a>
+        <a href="http://cloudex.io/apidocs/index.html" class="btn">API Docs</a>
     </section>
 
     <section class="main-content">
         <h3>
-          <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>In a nutshell
+          <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is CloudEx?
         </h3>
         <p>
-          You have a computational job which can be broken down into a sequence of tasks, some of which are memory intesive, others are CPU intensive or both. Other tasks are neither memory nor CPU intensive, but are used for forking and joining work. CloudEx executes such a job on the cloud by acquiring various worker VMs with different specification to execute the tasks and deletes them once the job is done. You can statically declare the VM specification to execute each task or drive it dynamically during the job execution. The following two cloud features makes it possible for CloudEx to dynamically acquire heterogeneous and ephemeral cloud-based clusters:
+          Imagine you have a computational job which can be broken down into a sequence of tasks, some of which are memory intensive, others are CPU intensive or both. Other tasks are neither memory nor CPU intensive, but are used for forking and joining work. CloudEx executes such a job on the cloud by acquiring various worker VMs &mdash; called processors &mdash; with different specification to execute the tasks and deletes them once the job is done. You can statically declare the VM specification to execute each task or drive it dynamically during the job execution. The following two cloud features makes it possible for CloudEx to dynamically acquire heterogeneous and ephemeral cloud-based clusters:
           <ul>
             <li><strong>Short VM startup time</strong> - this enables CloudEx to dynamically acquire VMs during job execution.</li>
-            <li><strong>Per-minute billing</strong> - this enables CloudEx to delete the VMs once the job is done, without incurring unecessary cost.</li>
+            <li><strong>Per-minute billing</strong> - this enables CloudEx to delete the VMs once the job is done, without incurring unnecessary cost.</li>
+          </ul>
+
+          In order to use CloudEx, you need to:
+          <ul>
+            <li>
+              Implement each of the tasks in your job as a separate class that extends <a href="http://cloudex.io/apidocs/io/cloudex/framework/task/CommonTask.html">CommonTask</a>
+            </li>
+            <li>
+              Create a VM image that contains your custom tasks and the CloudEx framework. The image building process is different for each cloud provider.
+            </li>
+            <li>
+              <a href="#designer-templates">Define</a> your job in JSON.
+            </li>
+            <li>
+              Run the coordinator component locally or on its own VM. You obviously need to authenticate it so that it can interact with the cloud provider's APIs.
+            </li>
+            <li>
+              The coordinator will run the job as explained in the <a href="#designer-templates">example</a> below and deletes the processor VMs.
+            </li>
           </ul>
         </p>
         <h3>
-          <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is CloudEx?
+          <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>CloudEx architecture
         </h3>
 
         <p>
-          CloudEx is a framework for executing jobs on cloud virtual machines. CloudEx uses a coordinator component to facilitate the excecution of jobs in the cloud. The coordinator can be run locally, on a VM or a remote server. The coordinator component acquires worker VMs &mdash; called processors &mdash; to execute a job, once the job is done the coordinator deletes these processors. Jobs are defined as a sequence of <a href="https://en.wikipedia.org/wiki/Massively_parallel_(computing)">embarrassingly parallel</a> tasks. Each task can be executed by the coordinator or multiple (1 to n) processors. CloudEx provides an implementation of the <a href="https://en.wikipedia.org/wiki/Bin_packing_problem">Bin Packing algorithm</a> that users can use to distribute the workload for processor tasks. Each processor task can define the specification (disk, memory and CPU cores) of the VM on which it should be executed. The number and the specification of the processors that execute each task can either be defined statically in the job JSON definition or driven dynamically during the job execution.
+          CloudEx is a framework for executing jobs on cloud virtual machines. CloudEx uses a coordinator component to facilitate the execution of jobs in the cloud. The coordinator can be run locally, on a VM or a remote server. The coordinator component acquires processors (VMs) to execute a job. Each processor can interact with other cloud services like storage and databases to retrieve its input data. Once the job is done the coordinator deletes these processors. The high level architecture is shown below:
+
+          <img src="images/cloudex_architecture.png">
+
+          Jobs are defined as a sequence of <a href="https://en.wikipedia.org/wiki/Massively_parallel_(computing)">embarrassingly parallel</a> tasks. Each task can be executed by the coordinator or multiple (1 to n) processors. CloudEx provides an implementation of the <a href="https://en.wikipedia.org/wiki/Bin_packing_problem">Bin Packing algorithm</a> that users can use to distribute the workload for processor tasks. Each processor task can define the specification (disk, memory and CPU cores) of the VM on which it should be executed. The number and the specification of the processors that execute each task can either be defined statically in the job JSON definition or driven dynamically during the job execution.
         </p>
 
         <h3>
-          <a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why use CloudEx?
+          <a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Show me an example
         </h3>
 
-        <p>We’ve crafted some handsome templates for you to use. Go ahead and click 'Continue to layouts' to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and
-            switch to another theme. Your Page content will be preserved.</p>
+        <p>
+          Imagine you have a job that processes a number of video files to extract some data then builds a catalogue in memory before saving it to a disk. The task to process the videos is CPU intensive and can be distributed. On the other hand the task to build the catalogue is memory intensive and needs to be processed on a single VM. Assuming we are using the <a href="https://cloud.google.com/">Google Cloud Platform</a>, a CloudEx job can be defined as follows:
+        </p>
+
+        <script src="https://gist.github.com/omerio/7583dd616695396bd5d6b0cf554c2fe7.js"></script>
+
+        We will explain each of the major parts of the job definition. More details are provided in the <a href="https://github.com/omerio/cloudex/wiki">documentation</a>:
+
+        <ul>
+          <li><strong>data</strong> - this section defines some static data that can be referenced in the task definitions.</li>
+          <li><strong>vmConfig</strong> - this section defines the default VM specifications for the processors.</li>
+          <li><strong>task</strong> - this section defines an array of tasks to be executed sequentially.</li>
+          <li><strong>ForkVideoProcessingTask</strong> - this task is executed by the coordinator, reads the details of the video files from cloud storage and outputs a <code>videoItems</code> array. Additionally, this task uses some algorithm to determine the number of processors to use and outputs <code>numberOfProcessors</code> value, say 16.</li>
+          <li><strong>ProcessVideosTask</strong> - this task is executed by the processors. The coordinator will start 16 VMs using the vmConfig mentioned above, each VM has 32 cores. The <code>BinPackingPartition</code> function is used to divide the <code>videoItems</code> equally (approximately) between them. The coordinator will wait for all the processors to finish before continuing with the next task. The variables in the <code>input</code> are passed to the processors using VM metadata. Each processor runs this task utilising all 32 CPU cores to extract some stats, information, etc... from these videos</li>
+          <li><strong>JoinVideoStatsTask</strong> - this task is executed by the coordinator and joins the information produced by the processors. It them outputs an array of <code>catalogueItems</code>.</li>
+          <li><strong>AssembleCatalogueTask</strong> - this task is executed by a single processor as specified by the <code>partitioning</code> function. For this task custom VM config is specified, so the coordinator wil start a VM which has 208 GB of memory and a 400GB SSD. This processor then builds the catalogue in memory, serialises it to disk and uploads it to cloud storage.</li>
+        </ul>
+
+        Finally, once the job is done the coordinator will delete all the processors.
 
         <h3>
-          <a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating pages manually
+          <a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting Started
         </h3>
 
-        <p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static
-            site generator. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.
+        <p>Checkout the <a href="https://github.com/omerio/cloudex#getting-started">Getting Started</a> section on GitHub.
         </p>
 
         <h3>
-          <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors
+          <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Documentations
         </h3>
 
-        <p>You can <a href="https://help.github.com/articles/basic-writing-and-formatting-syntax/#mentioning-users-and-teams" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element
-              will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>),
-              and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.
+        <p>
+          To find out more about CloudEx, check out the <a href="https://github.com/omerio/cloudex/wiki">documentation</a>.
         </p>
 
         <h3>
-            <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Support or Contact
+            <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing
         </h3>
 
-        <p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
+        <p>See the <a href="https://github.com/omerio/cloudex/blob/master/CONTRIBUTING.md">CONTRIBUTING</a> Guidelines.</p>
+
+        <h3>
+            <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License
+        </h3>
+
+        <p>Apache 2.0 - See <a href="https://github.com/omerio/cloudex/blob/master/LICENSE">LICENSE</a> for more information.</p>
+
 
         <footer class="site-footer">
             <span class="site-footer-owner"><a href="https://github.com/omerio/cloudex">Cloudex</a> is maintained by <a href="https://github.com/omerio">omerio</a>.</span>
