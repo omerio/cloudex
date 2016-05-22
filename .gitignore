@@ -1,0 +1,6 @@
+.project
+.settings
+.classpath
+cloudex-core/target
+cloudex-google/target
+target
