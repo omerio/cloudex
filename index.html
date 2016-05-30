@@ -25,6 +25,9 @@
           <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is CloudEx?
         </h3>
         <p>
+          Traditionally when executed on fixed clusters, tasks need to be tailored to fit the available computing resources (memory, CPU, disk size, etc...). With cloud computing the computing resources can be tailored to fit the tasks instead. CloudEx is a framework for executing jobs on cloud virtual machines. You can use the CloudEx framework to dynamically provision ephemeral computing resources to fit the tasks in hand.
+        </p>
+        <p>
           Imagine you have a computational job which can be broken down into a sequence of tasks, some of which are memory intensive, others are CPU intensive or both. Other tasks are neither memory nor CPU intensive, but are used for forking and joining work. CloudEx executes such a job on the cloud by acquiring various worker VMs &mdash; called processors &mdash; with different specification to execute the tasks and deletes them once the job is done. You can statically declare the VM specification to execute each task or drive it dynamically during the job execution. The following two cloud features makes it possible for CloudEx to dynamically acquire heterogeneous and ephemeral cloud-based clusters:
           <ul>
             <li><strong>Short VM startup time</strong> - this enables CloudEx to dynamically acquire VMs during job execution.</li>
@@ -40,13 +43,13 @@
               Create a VM image that contains your custom tasks and the CloudEx framework. The image building process is different for each cloud provider.
             </li>
             <li>
-              <a href="#designer-templates">Define</a> your job in JSON.
+              Define your job in JSON as explained in the <a href="#designer-templates">example</a> below.
             </li>
             <li>
-              Run the coordinator component locally or on its own VM. You obviously need to authenticate it so that it can interact with the cloud provider's APIs.
+              Run the <a href="http://cloudex.io/apidocs/io/cloudex/framework/components/Coordinator.html">Coordinator</a> component locally or on its own VM. You obviously need to authenticate it so that it can interact with the cloud provider's APIs.
             </li>
             <li>
-              The coordinator will run the job as explained in the <a href="#designer-templates">example</a> below and deletes the processor VMs once the job is done.
+              The Coordinator will run the job by starting the required processors, each processor runs the <a href="http://cloudex.io/apidocs/io/cloudex/framework/components/Processor.html">Processor</a> component. Once the job is done the coordinator deletes the processors.
             </li>
           </ul>
         </p>
@@ -55,11 +58,11 @@
         </h3>
 
         <p>
-          CloudEx is a framework for executing jobs on cloud virtual machines. CloudEx uses a coordinator component to facilitate the execution of jobs in the cloud. The coordinator can be run locally, on a VM or a remote server. The coordinator component acquires processors (VMs) to execute a job. Each processor can interact with other cloud services like storage and databases to retrieve its input data. Once the job is done the coordinator deletes these processors. The high level architecture is shown below:
+          CloudEx uses a coordinator component to facilitate the execution of jobs in the cloud. The coordinator can be run locally, on a VM or a remote server. The coordinator component acquires processors (VMs) to execute a job. Each processor can interact with other cloud services like storage and databases to retrieve its input data. The coordinator uses the cloud provider's <a href="https://cloud.google.com/compute/docs/metadata">metadata</a> to instruct the processors to execute particular tasks. The processors do not communicate with each other, but they update their metadata to indicate when the current task is completed, which is then read by the coordinator. Once the job is done the coordinator deletes these processors. The high level architecture is shown below:
 
           <img src="images/cloudex_architecture.png">
 
-          Jobs are defined as a sequence of <a href="https://en.wikipedia.org/wiki/Massively_parallel_(computing)">embarrassingly parallel</a> tasks. Each task can be executed by the coordinator or multiple (1 to n) processors. CloudEx provides an implementation of the <a href="https://en.wikipedia.org/wiki/Bin_packing_problem">Bin Packing algorithm</a> that users can use to distribute the workload for processor tasks. Each processor task can define the specification (disk, memory and CPU cores) of the VM on which it should be executed. The number and the specification of the processors that execute each task can either be defined statically in the job JSON definition or driven dynamically during the job execution.
+          Jobs are defined as a sequence of <a href="https://en.wikipedia.org/wiki/Massively_parallel_(computing)">embarrassingly parallel</a> tasks. Each task can be executed by the coordinator or multiple (1 to n) processors. CloudEx provides an <a href="http://cloudex.io/apidocs/io/cloudex/framework/partition/builtin/BinPackingPartition.html">implementation</a> of the <a href="https://en.wikipedia.org/wiki/Bin_packing_problem">Bin Packing algorithm</a> that users can use to distribute the workload for processor tasks. Each processor task can define the specification (disk, memory and CPU cores) of the VM on which it should be executed. The number and the specification of the processors that execute each task can either be defined statically in the job JSON definition or driven dynamically during the job execution.
         </p>
 
         <h3>
@@ -72,13 +75,13 @@
 
         <script src="https://gist.github.com/omerio/7583dd616695396bd5d6b0cf554c2fe7.js"></script>
 
-        We will explain each of the major parts of the job definition. More details are provided in the <a href="https://github.com/omerio/cloudex/wiki">documentation</a>:
+        We will explain each of the major parts of the <a href="http://cloudex.io/apidocs/io/cloudex/framework/config/Job.html">job definition</a>. More details are provided in the <a href="https://github.com/omerio/cloudex/wiki">documentation</a>:
 
         <ul>
-          <li><strong>data</strong> - this section defines some static data that can be referenced in the task definitions.</li>
+          <li><strong>data</strong> - this section defines some static data that can be referenced in the task definitions. This initial data is added to the job Context, a collection of key value pairs that can be provided as input to tasks.</li>
           <li><strong>vmConfig</strong> - this section defines the default VM specifications for the processors.</li>
           <li><strong>task</strong> - this section defines an array of tasks to be executed sequentially.</li>
-          <li><strong>ForkVideoProcessingTask</strong> - this task is executed by the coordinator, reads the details of the video files from cloud storage and outputs a <code>videoItems</code> array. Additionally, this task uses some algorithm to determine the number of processors to use and outputs <code>numberOfProcessors</code> value, say 16.</li>
+          <li><strong>ForkVideoProcessingTask</strong> - this task is executed by the coordinator, reads the details of the video files from a cloud storage bucket, the name of which is read from the job context (value prefixed with # such as '#bucket' are read from the job config). The task outputs a <code>videoItems</code> array. Additionally, this task uses some algorithm to determine the number of processors to use and outputs <code>numberOfProcessors</code> value, say 16. Both <code>videoItems</code> and are <code>numberOfProcessors</code> added to the job context.</li>
           <li><strong>ProcessVideosTask</strong> - this task is executed by the processors. The coordinator will start 16 VMs using the vmConfig mentioned above, each VM has 32 cores. The <code>BinPackingPartition</code> function is used to divide the <code>videoItems</code> equally (approximately) between them. The coordinator will wait for all the processors to finish before continuing with the next task. The variables in the <code>input</code> are passed to the processors using VM metadata. Each processor runs this task utilising all 32 CPU cores to extract some stats, information, etc... from these videos</li>
           <li><strong>JoinVideoStatsTask</strong> - this task is executed by the coordinator and joins the information produced by the processors. It them outputs an array of <code>catalogueItems</code>.</li>
           <li><strong>AssembleCatalogueTask</strong> - this task is executed by a single processor as specified by the <code>partitioning</code> function. For this task custom VM config is specified, so the coordinator wil start a VM which has 208 GB of memory and a 400GB SSD. This processor then builds the catalogue in memory, serialises it to disk and uploads it to cloud storage.</li>
@@ -122,6 +125,16 @@
 
     </section>
 
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-78489496-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
 
 </body>
 
